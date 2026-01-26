@@ -232,6 +232,18 @@ window.importRCCData = async () => {
     }
     alert("הייבוא הושלם בהצלחה!");
 };
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+const auth = getAuth(app);
+
+// בדיקה אם המשתמש מחובר
+onAuthStateChanged(auth, (user) => {
+    if (!user) {
+        // אם לא מחובר, שלח אותו לדף לוגין (ניצור אותו מיד)
+        window.location.href = "login.html";
+    }
+});
+        
     </script>
 </body>
 </html> 
