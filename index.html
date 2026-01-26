@@ -2,98 +2,92 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>IT Control | Enterprise Dashboard</title>
+    <title>Service Management | IT Control</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700&display=swap');
-        body { font-family: 'Assistant', sans-serif; background: #f8fafc; color: #1e293b; }
-        .sidebar { width: 260px; background: #0f172a; min-height: 100vh; transition: all 0.3s; }
-        .nav-link { display: flex; align-items: center; gap: 12px; padding: 14px 24px; color: #94a3b8; transition: 0.2s; }
-        .nav-link:hover { color: white; background: #1e293b; }
-        .active-link { color: white; background: #334155; border-right: 4px solid #10b981; }
-        .stat-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+        @import url('https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&display=swap');
+        body { font-family: 'Source Sans Pro', sans-serif; background: #f4f7f9; color: #343d47; }
+        .sn-sidebar { width: 240px; background: #293e40; min-height: 100vh; flex-shrink: 0; }
+        .sn-nav-item { padding: 12px 20px; color: #bdc0c4; display: flex; align-items: center; gap: 10px; font-size: 0.9rem; transition: 0.2s; }
+        .sn-nav-item:hover { background: #3b5052; color: white; }
+        .sn-nav-active { background: #4d6062; color: white; border-right: 4px solid #81b532; }
+        .sn-card { background: white; border: 1px solid #d1d4d7; border-radius: 2px; }
+        .sn-header { background: white; border-bottom: 1px solid #d1d4d7; height: 50px; display: flex; align-items: center; padding: 0 20px; }
     </style>
 </head>
 <body class="flex">
-    <aside class="sidebar shadow-2xl">
-        <div class="p-8 text-2xl font-black text-emerald-400 tracking-tighter border-b border-slate-800">IT CONTROL</div>
-        <nav class="mt-6">
-            <a href="index.html" class="nav-link active-link"><i class="fas fa-th-large"></i> דאשבורד</a>
-            <a href="incidents.html" class="nav-link"><i class="fas fa-ticket-alt"></i> קריאות שירות</a>
-            <a href="eset_licenses.html" class="nav-link"><i class="fas fa-shield-virus"></i> רישיונות ESET</a>
-            <a href="reports.html" class="nav-link"><i class="fas fa-chart-line"></i> דוחות ונתונים</a>
-            <a href="admin_users.html" class="nav-link"><i class="fas fa-user-shield"></i> ניהול צוות</a>
-        </nav>
-        <div class="absolute bottom-0 w-[260px] p-6 border-t border-slate-800">
-            <button onclick="logout()" class="w-full bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white py-3 rounded-xl font-bold transition">התנתק</button>
+
+    <aside class="sn-sidebar shadow-lg">
+        <div class="p-5 text-xl font-bold text-white border-b border-white/10 italic tracking-tighter">
+            <span class="text-emerald-400">service</span>now <span class="text-[10px] block opacity-50">IT CONTROL</span>
+        </div>
+        <div class="mt-4">
+            <div class="px-5 py-2 text-[10px] font-bold text-slate-500 uppercase">Self-Service</div>
+            <a href="index.html" class="sn-nav-item sn-nav-active"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="user_portal.html" class="sn-nav-item"><i class="fas fa-plus"></i> Create New</a>
+            
+            <div class="px-5 py-2 mt-4 text-[10px] font-bold text-slate-500 uppercase">IT Service Management</div>
+            <a href="incidents.html" class="sn-nav-item"><i class="fas fa-list"></i> Incidents</a>
+            <a href="reports.html" class="sn-nav-item"><i class="fas fa-chart-pie"></i> Reports</a>
+            <a href="admin_users.html" class="sn-nav-item"><i class="fas fa-users"></i> Users</a>
         </div>
     </aside>
 
-    <main class="flex-1 p-10 overflow-y-auto">
-        <header class="flex justify-between items-center mb-10">
-            <div>
-                <h1 class="text-3xl font-black text-slate-800">סקירה כללית</h1>
-                <p id="today-date" class="text-slate-500 font-medium"></p>
+    <div class="flex-1 flex flex-col">
+        <header class="sn-header justify-between">
+            <div class="text-xs text-slate-500 font-medium">
+                All > Dashboards > <span class="text-slate-800 font-bold">IT Overview</span>
             </div>
-            <div class="flex items-center gap-4 bg-white p-2 rounded-2xl shadow-sm border">
-                <div class="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-emerald-500/30">
-                    <i class="fas fa-user"></i>
-                </div>
-                <div class="ml-4 pl-4"><p class="text-xs font-bold text-slate-400">שלום,</p><p id="user-display" class="text-sm font-bold text-slate-800 italic">מנהל מערכת</p></div>
+            <div class="flex items-center gap-4">
+                <span class="text-xs font-bold text-slate-600">שלום, אנטון</span>
+                <button onclick="logout()" class="text-xs text-red-500 hover:underline">Logout</button>
             </div>
         </header>
 
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div class="stat-card">
-                <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-4 text-xl"><i class="fas fa-clock"></i></div>
-                <h3 class="text-slate-400 text-xs font-bold uppercase tracking-widest">קריאות פתוחות</h3>
-                <p id="open-count" class="text-3xl font-black mt-1">0</p>
+        <main class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="sn-card p-4 border-t-4 border-t-blue-500">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase">קריאות פתוחות</h3>
+                    <p class="text-3xl font-light text-slate-700 mt-1">14</p>
+                </div>
+                <div class="sn-card p-4 border-t-4 border-t-red-500">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase">קריטי (P1)</h3>
+                    <p class="text-3xl font-light text-slate-700 mt-1">2</p>
+                </div>
+                <div class="sn-card p-4 border-t-4 border-t-emerald-500">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase">SLA תקין</h3>
+                    <p class="text-3xl font-light text-slate-700 mt-1">98%</p>
+                </div>
             </div>
-            <div class="stat-card">
-                <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mb-4 text-xl"><i class="fas fa-exclamation-triangle"></i></div>
-                <h3 class="text-slate-400 text-xs font-bold uppercase tracking-widest">דחיפות גבוהה</h3>
-                <p id="high-priority-count" class="text-3xl font-black mt-1 text-red-500">0</p>
+
+            <div class="sn-card">
+                <div class="p-3 border-b bg-slate-50 flex justify-between items-center">
+                    <span class="text-sm font-bold">Incidents (Newest First)</span>
+                    <button class="text-xs bg-white border px-2 py-1 hover:bg-slate-100">New</button>
+                </div>
+                <table class="w-full text-right text-sm">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-600 border-b">
+                            <th class="p-3 font-semibold uppercase text-[10px]">Number</th>
+                            <th class="p-3 font-semibold uppercase text-[10px]">Short Description</th>
+                            <th class="p-3 font-semibold uppercase text-[10px]">Caller</th>
+                            <th class="p-3 font-semibold uppercase text-[10px]">Priority</th>
+                            <th class="p-3 font-semibold uppercase text-[10px]">State</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200">
+                        <tr class="hover:bg-blue-50/50 cursor-pointer">
+                            <td class="p-3 text-blue-600 font-bold underline">INC001024</td>
+                            <td class="p-3">המייל לא נפתח במחשב המנכ"ל</td>
+                            <td class="p-3 font-medium">ישראל ישראלי</td>
+                            <td class="p-3"><span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-[10px] font-bold italic">1 - Critical</span></td>
+                            <td class="p-3">New</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
-            <div class="stat-card">
-                <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-4 text-xl"><i class="fas fa-check-circle"></i></div>
-                <h3 class="text-slate-400 text-xs font-bold uppercase tracking-widest">נסגרו היום</h3>
-                <p id="closed-today" class="text-3xl font-black mt-1 text-emerald-600">0</p>
-            </div>
-            <div class="stat-card">
-                <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-4 text-xl"><i class="fas fa-key"></i></div>
-                <h3 class="text-slate-400 text-xs font-bold uppercase tracking-widest">רישיונות פגים</h3>
-                <p id="eset-expired" class="text-3xl font-black mt-1">0</p>
-            </div>
-        </div>
-    </main>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-        const firebaseConfig = { apiKey: "AIzaSyCkmi_WVVGk6PvIGoh8FEzXOyzzDN2jJqA", authDomain: "itservice-ef2cb.firebaseapp.com", projectId: "itservice-ef2cb", storageBucket: "itservice-ef2cb.firebasestorage.app", messagingSenderId: "585535831360", appId: "1:585535831360:web:8b84f53b6892a2fc490ea5" };
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        document.getElementById('today-date').innerText = new Intl.DateTimeFormat('he-IL', { dateStyle: 'full' }).format(new Date());
-
-        onAuthStateChanged(auth, user => {
-            if(!user) window.location.href="login.html";
-            else document.getElementById('user-display').innerText = user.email.split('@')[0];
-        });
-
-        // עדכון סטטיסטיקה בזמן אמת
-        onSnapshot(collection(db, "incidents"), snap => {
-            const open = snap.docs.filter(d => d.data().status !== 'סגור').length;
-            const high = snap.docs.filter(d => d.data().priority === 'גבוהה' && d.data().status !== 'סגור').length;
-            document.getElementById('open-count').innerText = open;
-            document.getElementById('high-priority-count').innerText = high;
-        });
-
-        window.logout = () => signOut(auth).then(() => window.location.href="login.html");
-    </script>
+        </main>
+    </div>
 </body>
 </html>

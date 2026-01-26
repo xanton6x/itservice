@@ -1,22 +1,89 @@
-<div class="card p-6 mb-8 flex flex-wrap items-end gap-4 bg-white border-2 border-emerald-500/20">
-    <div class="flex-1 min-w-[200px]">
-        <label class="block text-xs font-bold text-slate-400 mb-1">חיפוש חופשי</label>
-        <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="חפש לפי נושא או שם..." class="w-full bg-slate-50 border-2 border-slate-100 p-3 rounded-xl focus:bg-white focus:border-emerald-500 transition outline-none text-slate-800 font-bold">
-    </div>
-    <div class="flex-1 min-w-[150px]">
-        <label class="block text-xs font-bold text-slate-400 mb-1">נושא חדש</label>
-        <input type="text" id="inc-title" placeholder="מה הבעיה?" class="w-full bg-white border-2 border-slate-100 p-3 rounded-xl focus:border-emerald-500 transition outline-none font-bold">
-    </div>
-    <button onclick="addIncident()" class="bg-emerald-600 text-white px-8 py-3.5 rounded-xl font-black hover:bg-emerald-700 shadow-lg shadow-emerald-600/30 transition-all active:scale-95">פתח קריאה</button>
-</div>
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Incidents | IT Control</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700&display=swap');
+        body { font-family: 'Assistant', sans-serif; background-color: #f1f5f9; display: flex; }
+        .sidebar { width: 260px; background-color: #1e293b; color: white; min-height: 100vh; flex-shrink: 0; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .active-link { background-color: #334155; border-right: 4px solid #10b981; }
+    </style>
+</head>
+<body>
+    <aside class="sidebar flex flex-col">
+        <div class="p-6 text-2xl font-bold border-b border-slate-700 text-emerald-400 italic text-center">IT CONTROL</div>
+        <nav class="flex-1 mt-4">
+            <a href="index.html" class="flex items-center gap-4 px-6 py-4 hover:bg-slate-700"><i class="fas fa-home"></i> דאשבורד</a>
+            <a href="incidents.html" class="flex items-center gap-4 px-6 py-4 active-link"><i class="fas fa-ticket-alt"></i> קריאות שירות</a>
+            <a href="eset_licenses.html" class="flex items-center gap-4 px-6 py-4 hover:bg-slate-700"><i class="fas fa-shield-alt"></i> רישיונות ESET</a>
+            <a href="admin_users.html" class="flex items-center gap-4 px-6 py-4 hover:bg-slate-700"><i class="fas fa-users-cog"></i> ניהול משתמשים</a>
+        </nav>
+        <div class="p-6"><button onclick="logout()" class="w-full bg-red-500 hover:bg-red-600 py-2 rounded-lg font-bold text-white">התנתק</button></div>
+    </aside>
 
-<script>
-    function filterTable() {
-        const input = document.getElementById("searchInput").value.toUpperCase();
-        const rows = document.getElementById("incidents-table-body").getElementsByTagName("tr");
-        for (let i = 0; i < rows.length; i++) {
-            const text = rows[i].innerText.toUpperCase();
-            rows[i].style.display = text.includes(input) ? "" : "none";
-        }
-    }
-</script>
+    <main class="flex-1 p-10">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-slate-800">ניהול קריאות שירות</h1>
+        </div>
+
+        <div class="card p-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <input type="text" id="inc-title" placeholder="נושא הקריאה" class="border p-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-400 text-sm">
+                <input type="text" id="inc-user" placeholder="שם המשתמש" class="border p-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-400 text-sm">
+                <select id="inc-priority" class="border p-3 rounded-xl outline-none text-sm">
+                    <option>נמוכה</option><option>בינונית</option><option>גבוהה 🔥</option>
+                </select>
+                <button onclick="addIncident()" class="bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition">פתח קריאה</button>
+            </div>
+        </div>
+
+        <div class="card overflow-hidden">
+            <table class="w-full text-right">
+                <thead class="bg-slate-50 border-b">
+                    <tr><th class="p-4 text-slate-500">נושא</th><th class="p-4 text-slate-500">משתמש</th><th class="p-4 text-slate-500 text-center">סטטוס</th><th class="p-4 text-slate-500">פעולות</th></tr>
+                </thead>
+                <tbody id="incidents-table-body" class="divide-y"></tbody>
+            </table>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        const firebaseConfig = { apiKey: "AIzaSyCkmi_WVVGk6PvIGoh8FEzXOyzzDN2jJqA", authDomain: "itservice-ef2cb.firebaseapp.com", projectId: "itservice-ef2cb", storageBucket: "itservice-ef2cb.firebasestorage.app", messagingSenderId: "585535831360", appId: "1:585535831360:web:8b84f53b6892a2fc490ea5" };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        onAuthStateChanged(auth, user => { if(!user) window.location.href="login.html"; });
+
+        onSnapshot(query(collection(db, "incidents"), orderBy("timestamp", "desc")), snap => {
+            const tbody = document.getElementById('incidents-table-body');
+            tbody.innerHTML = '';
+            snap.forEach(d => {
+                const item = d.data();
+                tbody.innerHTML += `<tr>
+                    <td class="p-4 font-bold">${item.title}</td>
+                    <td class="p-4 text-slate-600">${item.user}</td>
+                    <td class="p-4 text-center"><span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold">${item.status}</span></td>
+                    <td class="p-4"><button onclick="deleteInc('${d.id}')" class="text-red-400 hover:text-red-600"><i class="fas fa-trash"></i></button></td>
+                </tr>`;
+            });
+        });
+
+        window.addIncident = async () => {
+            const title = document.getElementById('inc-title').value;
+            const user = document.getElementById('inc-user').value;
+            if(!title || !user) return;
+            await addDoc(collection(db, "incidents"), { title, user, status: "פתוח", timestamp: Date.now() });
+            document.getElementById('inc-title').value = ''; document.getElementById('inc-user').value = '';
+        };
+        window.deleteInc = async id => { if(confirm("למחוק?")) await deleteDoc(doc(db, "incidents", id)); };
+        window.logout = () => signOut(auth).then(()=> window.location.href="login.html");
+    </script>
+</body>
+</html>

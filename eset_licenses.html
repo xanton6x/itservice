@@ -2,93 +2,61 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>ESET Management | IT Control</title>
+    <title>Asset Management | IT Control</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700&display=swap');
-        body { font-family: 'Assistant', sans-serif; background-color: #f1f5f9; display: flex; margin: 0; }
-        .sidebar { width: 260px; background-color: #1e293b; color: white; min-height: 100vh; flex-shrink: 0; }
-        .card { background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .active-link { background-color: #334155; border-right: 4px solid #10b981; }
-        .input-white { background-color: white; border: 2px solid #e2e8f0; color: #1e293b; padding: 10px; border-radius: 8px; outline: none; width: 100%; }
-        .input-white:focus { border-color: #10b981; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background: #f4f7f9; display: flex; }
+        .sn-sidebar { width: 240px; background: #293e40; min-height: 100vh; color: #bdc0c4; }
+        .sn-header { background: white; border-bottom: 1px solid #d1d4d7; height: 50px; display: flex; align-items: center; padding: 0 20px; width: 100%; }
+        .asset-card { background: white; border: 1px solid #d1d4d7; border-radius: 2px; }
+        .status-pill { padding: 2px 8px; border-radius: 2px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
+        .active-link { background: #4d6062; color: white; border-right: 4px solid #81b532; }
     </style>
 </head>
-<body>
-    <aside class="sidebar flex flex-col">
-        <div class="p-6 text-2xl font-bold border-b border-slate-700 text-emerald-400 italic text-center">IT CONTROL</div>
-        <nav class="flex-1 mt-4">
-            <a href="index.html" class="flex items-center gap-4 px-6 py-4 hover:bg-slate-700"><i class="fas fa-home"></i> דאשבורד</a>
-            <a href="incidents.html" class="flex items-center gap-4 px-6 py-4 hover:bg-slate-700"><i class="fas fa-ticket-alt"></i> קריאות שירות</a>
-            <a href="eset_licenses.html" class="flex items-center gap-4 px-6 py-4 active-link"><i class="fas fa-shield-alt"></i> רישיונות ESET</a>
-            <a href="reports.html" class="flex items-center gap-4 px-6 py-4 hover:bg-slate-700"><i class="fas fa-chart-bar"></i> דוחות</a>
-            <a href="admin_users.html" class="flex items-center gap-4 px-6 py-4 hover:bg-slate-700"><i class="fas fa-users-cog"></i> ניהול משתמשים</a>
+<body class="flex">
+    <aside class="sn-sidebar">
+        <div class="p-5 text-xl font-bold text-white italic border-b border-white/10">service<span class="text-emerald-400">now</span></div>
+        <nav class="mt-4">
+            <a href="index.html" class="block p-3 hover:bg-slate-700">Dashboard</a>
+            <a href="incidents.html" class="block p-3 hover:bg-slate-700">Incidents</a>
+            <a href="eset_licenses.html" class="block p-3 active-link italic">Asset Management (ESET)</a>
+            <a href="reports.html" class="block p-3 hover:bg-slate-700">Reports</a>
         </nav>
     </aside>
 
-    <main class="flex-1 p-10">
-        <h1 class="text-3xl font-bold mb-8 text-slate-800">ניהול רישיונות ESET</h1>
-        
-        <div class="card p-6 mb-8 bg-slate-50 border border-slate-200">
-            <h3 class="font-bold mb-4 text-slate-700">הוספת רישיון חדש</h3>
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <input type="text" id="cust" placeholder="שם הלקוח" class="input-white">
-                <input type="text" id="key" placeholder="מפתח רישיון" class="input-white">
-                <input type="date" id="exp" class="input-white">
-                <button onclick="addLicense()" class="bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition">שמור רישיון</button>
+    <main class="flex-1">
+        <header class="sn-header justify-between">
+            <div class="text-[11px] text-slate-500 font-medium">Assets > Software Licenses > <span class="text-slate-800 font-bold">ESET Endpoint</span></div>
+            <div class="text-[11px] font-bold text-slate-600">Admin: anton@rcc.co.il</div>
+        </header>
+
+        <div class="p-6">
+            <div class="asset-card mb-6 p-4 bg-slate-50">
+                <div class="grid grid-cols-4 gap-4">
+                    <input type="text" id="cust" placeholder="Client Name" class="border p-2 text-sm outline-none focus:border-blue-500">
+                    <input type="text" id="key" placeholder="License Key" class="border p-2 text-sm outline-none focus:border-blue-500">
+                    <input type="date" id="exp" class="border p-2 text-sm outline-none">
+                    <button onclick="addLicense()" class="bg-[#293e40] text-white text-xs font-bold uppercase hover:bg-[#3b5052]">Register Asset</button>
+                </div>
+            </div>
+
+            <div class="asset-card overflow-hidden">
+                <table class="w-full text-right text-sm">
+                    <thead class="bg-slate-100 border-b">
+                        <tr>
+                            <th class="p-3 text-[10px] uppercase text-slate-500">Client / Department</th>
+                            <th class="p-3 text-[10px] uppercase text-slate-500">License ID</th>
+                            <th class="p-3 text-[10px] uppercase text-slate-500">Expires</th>
+                            <th class="p-3 text-[10px] uppercase text-slate-500">Status</th>
+                            <th class="p-3"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="eset-table" class="divide-y"></tbody>
+                </table>
             </div>
         </div>
-
-        <div class="card overflow-hidden">
-            <table class="w-full text-right">
-                <thead class="bg-slate-100 border-b">
-                    <tr>
-                        <th class="p-4">לקוח</th>
-                        <th class="p-4">מפתח מוצר</th>
-                        <th class="p-4">תאריך תפוגה</th>
-                        <th class="p-4 text-center">פעולות</th>
-                    </tr>
-                </thead>
-                <tbody id="eset-table" class="divide-y text-slate-700"></tbody>
-            </table>
-        </div>
     </main>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        const firebaseConfig = { apiKey: "AIzaSyCkmi_WVVGk6PvIGoh8FEzXOyzzDN2jJqA", authDomain: "itservice-ef2cb.firebaseapp.com", projectId: "itservice-ef2cb", storageBucket: "itservice-ef2cb.firebasestorage.app", messagingSenderId: "585535831360", appId: "1:585535831360:web:8b84f53b6892a2fc490ea5" };
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-
-        onAuthStateChanged(auth, user => { if(!user) window.location.href="login.html"; });
-
-        onSnapshot(collection(db, "licenses"), snap => {
-            const tb = document.getElementById('eset-table');
-            tb.innerHTML = '';
-            snap.forEach(d => {
-                const l = d.data();
-                tb.innerHTML += `<tr>
-                    <td class="p-4 font-bold">${l.cust}</td>
-                    <td class="p-4 font-mono text-xs text-blue-600">${l.key}</td>
-                    <td class="p-4">${l.exp}</td>
-                    <td class="p-4 text-center">
-                        <button onclick="delLic('${d.id}')" class="text-red-400 hover:text-red-600"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>`;
-            });
-        });
-
-        window.addLicense = async () => {
-            const cust = document.getElementById('cust').value, key = document.getElementById('key').value, exp = document.getElementById('exp').value;
-            if(!cust || !key) return alert("נא למלא שדות חובה");
-            await addDoc(collection(db, "licenses"), { cust, key, exp });
-            document.getElementById('cust').value = ''; document.getElementById('key').value = '';
-        };
-        window.delLic = async id => { if(confirm("למחוק?")) await deleteDoc(doc(db, "licenses", id)); };
-    </script>
 </body>
 </html>
