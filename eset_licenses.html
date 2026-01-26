@@ -18,27 +18,26 @@
 </head>
 <body class="min-h-screen">
 
-    <nav class="bg-gray-900 text-white p-4 sticky top-0 z-50 shadow-xl">
-        <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <div class="flex items-center gap-6">
-                <h1 class="text-xl font-extrabold tracking-tighter text-emerald-400">ESET<span class="text-white">SHIELD</span></h1>
-                <div class="hidden md:flex gap-4 text-xs font-bold uppercase text-gray-400">
-                    <button onclick="filterByStatus('all')" class="hover:text-white">הכל</button>
-                    <button onclick="filterByStatus('expired')" class="hover:text-white text-red-400">פגי תוקף</button>
-                    <button onclick="filterByStatus('warning')" class="hover:text-white text-orange-400">בסכנת תפוגה</button>
-                </div>
-          <div class="flex items-center gap-4">
-    <button onclick="importRCCData()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
-        <i class="fas fa-cloud-upload-alt"></i> ייבוא רשימת RCC
-    </button>
-
-    <button onclick="generatePDF()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
-        <i class="fas fa-file-pdf"></i> ייצא דו"ח PDF
-    </button>
-    <a href="index.html" class="bg-gray-700 p-2 rounded-full hover:bg-gray-600 transition"><i class="fas fa-home"></i></a>
-</div>
+<nav class="bg-gray-900 text-white p-4 sticky top-0 z-50 shadow-xl">
+    <div class="max-w-7xl mx-auto flex justify-between items-center">
+        <div class="flex items-center gap-6">
+            <a href="index.html" class="text-gray-400 hover:text-emerald-400 transition flex items-center gap-2 text-sm">
+                <i class="fas fa-chevron-right"></i> חזרה ל-IT Management
+            </a>
+            <div class="h-6 w-[1px] bg-gray-700"></div>
+            <h1 class="text-xl font-extrabold tracking-tighter text-emerald-400">ESET<span class="text-white">SHIELD</span></h1>
         </div>
-    </nav>
+        
+        <div class="flex items-center gap-4">
+            <button onclick="importRCCData()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition">
+                ייבוא נתוני RCC
+            </button>
+            <button onclick="generatePDF()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition">
+                ייצא דו"ח PDF
+            </button>
+        </div>
+    </div>
+</nav>
 
     <main class="max-w-7xl mx-auto p-6 lg:p-12">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
