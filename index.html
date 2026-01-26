@@ -84,6 +84,18 @@
                     <div class="bg-white p-6 rounded-sm shadow-sm border-t-2 border-orange-400">
                         <div class="text-gray-400 text-[10px] font-bold uppercase mb-2">Pending Approvals</div>
                         <div class="text-4xl font-light" id="stat-pending">0</div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border-r-4 border-emerald-500 hover:shadow-md transition cursor-pointer" onclick="window.location.href='eset_licenses.html'">
+    <div class="flex justify-between items-start">
+        <div>
+            <p class="text-gray-400 text-[10px] font-bold uppercase tracking-widest">רישיונות ESET בטיפול</p>
+            <h2 id="dash-eset-alerts" class="text-3xl font-black mt-2 text-gray-800">0</h2>
+        </div>
+        <div class="bg-emerald-50 p-2 rounded-lg">
+            <i class="fas fa-shield-alt text-emerald-600"></i>
+        </div>
+    </div>
+    <p id="dash-eset-status" class="text-[11px] mt-4 text-emerald-600 font-medium">הכל מעודכן ותקין</p>
+</div>
                     </div>
                 </div>
 
@@ -306,7 +318,44 @@
         setInterval(() => {
             document.getElementById('live-clock').innerText = new Date().toLocaleTimeString('he-IL', {hour12: false}) + " | UTC+2";
         }, 1000);
+// הוסף את זה בתוך ה-script type="module" ב-index.html
+import { collection, onSnapshot, query } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+// התחברות למאגר הרישיונות (db כבר מוגדר אצלך)
+const esetCol = collection(db, "eset_licenses");
+
+onSnapshot(esetCol, (snapshot) => {
+    let alertCount = 0;
+    const now = new Date();
+
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        const expDate = new Date(data.expiryDate);
+        const diffDays = Math.ceil((expDate - now) / (1000 * 60 * 60 * 24));
+
+        // אם הרישיון פג או עומד לפוג ב-30 יום הקרובים
+        if (diffDays <= 30) {
+            alertCount++;
+        }
+    });
+
+    const alertElement = document.getElementById('dash-eset-alerts');
+    const statusElement = document.getElementById('dash-eset-status');
+
+    alertElement.innerText = alertCount;
+
+    if (alertCount > 0) {
+        alertElement.classList.add('text-red-600');
+        statusElement.innerText = `ישנם ${alertCount} רישיונות הדורשים חידוש!`;
+        statusElement.classList.replace('text-emerald-600', 'text-red-600');
+        statusElement.parentElement.classList.replace('border-emerald-500', 'border-red-500');
+    } else {
+        alertElement.classList.remove('text-red-600');
+        statusElement.innerText = "כל הרישיונות בתוקף";
+        statusElement.classList.replace('text-red-600', 'text-emerald-600');
+        statusElement.parentElement.classList.replace('border-red-500', 'border-emerald-500');
+    }
+});
     </script>
 </body>
 </html>
