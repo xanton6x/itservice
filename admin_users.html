@@ -10,33 +10,35 @@
     <nav class="bg-slate-900 text-white p-4 shadow-xl">
         <div class="max-w-7xl mx-auto flex justify-between items-center">
             <h1 class="font-bold text-xl text-blue-400"><i class="fas fa-users-cog"></i> User Management Center</h1>
-            <a href="index.html" class="text-sm bg-gray-700 px-4 py-2 rounded hover:bg-gray-600">חזרה לדאשבורד</a>
+            <a href="index.html" class="text-sm bg-gray-700 px-4 py-2 rounded hover:bg-gray-600 transition">חזרה לדאשבורד</a>
         </div>
     </nav>
 
     <main class="max-w-6xl mx-auto p-8">
         <div class="bg-white p-6 rounded-xl shadow-sm mb-8 border border-gray-200">
-            <h2 class="text-lg font-bold mb-4">הוספת משתמש חדש למערכת</h2>
+            <h2 class="text-lg font-bold mb-4 text-gray-700">הוספת משתמש חדש למערכת</h2>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <input type="email" id="new-user-email" placeholder="אימייל" class="border p-3 rounded-lg text-sm">
-                <input type="password" id="new-user-pass" placeholder="סיסמה ראשונית" class="border p-3 rounded-lg text-sm">
-                <select id="new-user-role" class="border p-3 rounded-lg text-sm">
+                <input type="email" id="new-user-email" placeholder="אימייל" class="border p-3 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="password" id="new-user-pass" placeholder="סיסמה ראשונית" class="border p-3 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                <select id="new-user-role" class="border p-3 rounded-lg text-sm outline-none">
                     <option value="user">User (צפייה בלבד)</option>
                     <option value="admin">Admin (ניהול מלא)</option>
                 </select>
-                <button onclick="createUser()" class="bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition">צור משתמש</button>
+                <button id="createBtn" onclick="createUser()" class="bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition py-3">
+                    <i class="fas fa-user-plus ml-2"></i> צור משתמש
+                </button>
             </div>
-            <p class="text-[10px] text-gray-400 mt-2">* יצירת משתמש תרשום אותו ב-Firebase Auth ותוסיף אותו למאגר ההרשאות.</p>
+            <div id="msg" class="hidden mt-4 p-3 rounded-lg text-center text-sm font-bold"></div>
         </div>
 
         <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
             <table class="w-full text-right text-sm">
                 <thead class="bg-gray-50 border-b font-bold text-gray-600">
                     <tr>
-                        <th class="p-4">שם/אימייל</th>
-                        <th class="p-4">תפקיד</th>
-                        <th class="p-4">תאריך הצטרפות</th>
-                        <th class="p-4">פעולות</th>
+                        <th class="p-4">אימייל המשתמש</th>
+                        <th class="p-4">תפקיד הרשאה</th>
+                        <th class="p-4">תאריך יצירה</th>
+                        <th class="p-4 text-center">פעולות</th>
                     </tr>
                 </thead>
                 <tbody id="user-table-body" class="divide-y divide-gray-100">
@@ -47,7 +49,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getAuth, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -64,7 +66,71 @@
         const db = getFirestore(app);
         const usersCol = collection(db, "users");
 
-        // Load Users
+        // בדיקה שאתה מחובר כ-Admin (שומר סף)
+        onAuthStateChanged(auth, (user) => {
+            if (!user) window.location.href = "login.html";
+        });
+
+        const showMsg = (text, isError = false) => {
+            const el = document.getElementById('msg');
+            el.innerText = text;
+            el.className = `mt-4 p-3 rounded-lg text-center text-sm font-bold ${isError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`;
+            el.classList.remove('hidden');
+            setTimeout(() => el.classList.add('hidden'), 5000);
+        };
+
+        // --- פונקציות גלובליות לכפתורים ---
+        
+        window.createUser = async () => {
+            const email = document.getElementById('new-user-email').value;
+            const pass = document.getElementById('new-user-pass').value;
+            const role = document.getElementById('new-user-role').value;
+            const btn = document.getElementById('createBtn');
+
+            if (!email || !pass) return showMsg("נא למלא אימייל וסיסמה", true);
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner animate-spin"></i> יוצר...';
+
+            try {
+                // 1. יצירה ב-Auth (המשתמש יוכל להתחבר)
+                await createUserWithEmailAndPassword(auth, email, pass);
+                // 2. שמירת הרשאות ב-Firestore
+                await addDoc(usersCol, { email, role, timestamp: Date.now() });
+                
+                showMsg("המשתמש נוצר בהצלחה במערכת!");
+                document.getElementById('new-user-email').value = '';
+                document.getElementById('new-user-pass').value = '';
+            } catch (e) {
+                console.error(e);
+                showMsg("שגיאה: " + e.message, true);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-user-plus ml-2"></i> צור משתמש';
+            }
+        };
+
+        window.updateRole = async (id, newRole) => {
+            try {
+                await updateDoc(doc(db, "users", id), { role: newRole });
+                showMsg("הרשאה עודכנה");
+            } catch (e) { showMsg("שגיאה בעדכון", true); }
+        };
+
+        window.resetPass = async (email) => {
+            try {
+                await sendPasswordResetEmail(auth, email);
+                alert("נשלח אימייל לאיפוס סיסמה לכתובת: " + email);
+            } catch (e) { alert("שגיאה: " + e.message); }
+        };
+
+        window.deleteUserDoc = async (id) => {
+            if(confirm("למחוק את המשתמש מהרשימה? (הערה: יש למחוק ידנית גם מה-Auth ב-Console לצורך חסימה מלאה)")) {
+                await deleteDoc(doc(db, "users", id));
+            }
+        };
+
+        // טעינת המשתמשים בזמן אמת
         onSnapshot(usersCol, (snapshot) => {
             const tbody = document.getElementById('user-table-body');
             tbody.innerHTML = '';
@@ -72,63 +138,23 @@
                 const u = userDoc.data();
                 const id = userDoc.id;
                 tbody.innerHTML += `
-                    <tr class="hover:bg-gray-50 transition">
-                        <td class="p-4 font-semibold">${u.email}</td>
+                    <tr class="hover:bg-gray-50 transition border-b border-gray-100">
+                        <td class="p-4 font-semibold text-gray-700">${u.email}</td>
                         <td class="p-4">
-                            <select onchange="updateRole('${id}', this.value)" class="bg-transparent border border-gray-200 rounded px-2 py-1">
+                            <select onchange="updateRole('${id}', this.value)" class="bg-white border rounded px-2 py-1 text-xs outline-none">
                                 <option value="user" ${u.role === 'user' ? 'selected' : ''}>User</option>
                                 <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
                             </select>
                         </td>
                         <td class="p-4 text-gray-400 text-xs">${new Date(u.timestamp).toLocaleDateString()}</td>
-                        <td class="p-4 flex gap-3">
-                            <button onclick="resetPass('${u.email}')" class="text-blue-500 hover:underline text-xs">אפס סיסמה</button>
-                            <button onclick="deleteUser('${id}')" class="text-red-400 hover:text-red-600"><i class="fas fa-trash"></i></button>
+                        <td class="p-4 flex justify-center gap-4">
+                            <button onclick="resetPass('${u.email}')" class="text-blue-500 hover:text-blue-700 text-xs font-bold">איפוס סיסמה</button>
+                            <button onclick="deleteUserDoc('${id}')" class="text-gray-300 hover:text-red-500"><i class="fas fa-trash-alt"></i></button>
                         </td>
                     </tr>
                 `;
             });
         });
-
-        // Create User
-        window.createUser = async () => {
-            const email = document.getElementById('new-user-email').value;
-            const pass = document.getElementById('new-user-pass').value;
-            const role = document.getElementById('new-user-role').value;
-
-            try {
-                // 1. Create in Firebase Auth
-                await createUserWithEmailAndPassword(auth, email, pass);
-                // 2. Create in Firestore with role
-                await addDoc(usersCol, { email, role, timestamp: Date.now() });
-                alert("משתמש נוצר בהצלחה!");
-                document.querySelectorAll('input').forEach(i => i.value = '');
-            } catch (e) { alert("שגיאה: " + e.message); }
-        };
-
-        window.updateRole = async (id, newRole) => {
-            await updateDoc(doc(db, "users", id), { role: newRole });
-        };
-
-        window.resetPass = async (email) => {
-            await sendPasswordResetEmail(auth, email);
-            alert("אימייל לאיפוס סיסמה נשלח ל-" + email);
-        };
-
-        window.deleteUser = async (id) => {
-            if(confirm("האם למחוק משתמש זה? (זה ימחק אותו מהמאגר, אך יש למחוק ידנית מה-Auth ב-Console)")) {
-                await deleteDoc(doc(db, "users", id));
-            }
-        };
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-const auth = getAuth(app);
-onAuthStateChanged(auth, (user) => {
-    if (!user) {
-        window.location.href = "login.html"; // אם לא מחובר, זרוק אותו ללוגין
-    }
-});
-        
     </script>
 </body>
 </html>
