@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>כניסה למערכת | IT Service Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background: #0f172a; }
+        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div class="glass w-full max-w-md p-8 rounded-2xl shadow-2xl">
+        <div class="text-center mb-10">
+            <div class="inline-block p-4 rounded-full bg-blue-600/20 mb-4">
+                <i class="fas fa-user-shield text-3xl text-blue-500"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-white tracking-tight">IT <span class="text-blue-500">CONTROL</span> CENTER</h1>
+            <p class="text-gray-400 text-sm mt-2">אנא הזדהה כדי להמשיך למערכת הניהול</p>
+        </div>
+
+        <div class="space-y-6">
+            <div>
+                <label class="block text-xs font-bold text-gray-400 uppercase mb-2 mr-1">אימייל</label>
+                <div class="relative">
+                    <input type="email" id="email" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 px-10 text-white outline-none focus:border-blue-500 transition" placeholder="name@company.com">
+                    <i class="fas fa-envelope absolute right-3 top-3.5 text-gray-500 text-sm"></i>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-gray-400 uppercase mb-2 mr-1">סיסמה</label>
+                <div class="relative">
+                    <input type="password" id="password" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 px-10 text-white outline-none focus:border-blue-500 transition" placeholder="••••••••">
+                    <i class="fas fa-lock absolute right-3 top-3.5 text-gray-500 text-sm"></i>
+                </div>
+            </div>
+
+            <button onclick="login()" id="loginBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2">
+                <span>התחבר למערכת</span>
+                <i class="fas fa-sign-in-alt"></i>
+            </button>
+
+            <div id="errorMsg" class="hidden text-red-400 text-center text-xs bg-red-400/10 p-3 rounded-lg border border-red-400/20">
+                פרטי ההתחברות שגויים. נסה שוב.
+            </div>
+        </div>
+
+        <div class="mt-8 text-center border-t border-white/10 pt-6">
+            <button onclick="forgotPassword()" class="text-gray-500 hover:text-blue-400 text-xs transition">שכחת סיסמה? לחץ כאן לאיפוס</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCkmi_WVVGk6PvIGoh8FEzXOyzzDN2jJqA",
+            authDomain: "itservice-ef2cb.firebaseapp.com",
+            projectId: "itservice-ef2cb",
+            storageBucket: "itservice-ef2cb.firebasestorage.app",
+            messagingSenderId: "585535831360",
+            appId: "1:585535831360:web:8b84f53b6892a2fc490ea5"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        window.login = async () => {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const btn = document.getElementById('loginBtn');
+            const err = document.getElementById('errorMsg');
+
+            if(!email || !password) return;
+
+            // שינוי כפתור למצב טעינה
+            btn.innerHTML = '<i class="fas fa-spinner animate-spin"></i> מתחבר...';
+            btn.disabled = true;
+            err.classList.add('hidden');
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                // הצלחה - מעבר לדף הראשי
+                window.location.href = "index.html";
+            } catch (error) {
+                console.error(error);
+                err.classList.remove('hidden');
+                btn.innerHTML = '<span>התחבר למערכת</span> <i class="fas fa-sign-in-alt"></i>';
+                btn.disabled = false;
+            }
+        };
+
+        window.forgotPassword = async () => {
+            const email = document.getElementById('email').value;
+            if(!email) return alert("אנא הזן אימייל בשדה למעלה כדי לקבל לינק לאיפוס");
+            
+            try {
+                await sendPasswordResetEmail(auth, email);
+                alert("אימייל לאיפוס סיסמה נשלח לכתובת: " + email);
+            } catch (error) {
+                alert("שגיאה: " + error.message);
+            }
+        };
+    </script>
+</body>
+</html>
