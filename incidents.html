@@ -3,34 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ניהול קריאות שירות | IT System</title>
+    <title>מרכז קריאות שירות | IT Control</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700&display=swap');
+        body { font-family: 'Assistant', sans-serif; background: #f8fafc; }
+        .status-new { background: #fee2e2; color: #991b1b; }
+        .status-progress { background: #fef3c7; color: #92400e; }
+        .status-resolved { background: #dcfce7; color: #166534; }
+    </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="min-h-screen pb-10">
 
-    <nav class="bg-slate-900 text-white p-4 shadow-lg sticky top-0 z-50">
+    <nav class="bg-slate-900 text-white p-4 shadow-xl sticky top-0 z-50">
         <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <div class="flex items-center gap-4">
-                <a href="index.html" class="text-gray-400 hover:text-white transition"><i class="fas fa-arrow-right"></i> חזרה</a>
-                <h1 class="text-xl font-bold"><i class="fas fa-ticket-alt text-blue-400"></i> מוקד קריאות שירות</h1>
+            <div class="flex items-center gap-6">
+                <a href="index.html" class="bg-white/10 hover:bg-white/20 p-2 rounded-lg transition">
+                    <i class="fas fa-chevron-right px-1"></i> חזרה לדאשבורד
+                </a>
+                <h1 class="text-xl font-black tracking-tight italic">IT<span class="text-blue-400">TICKETS</span></h1>
             </div>
-            <button onclick="openModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold transition">
-                <i class="fas fa-plus"></i> פתיחת קריאה חדשה
-            </button>
+            <div class="flex gap-3">
+                <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition">
+                    <i class="fas fa-file-excel ml-1"></i> ייצוא דוח
+                </button>
+                <button onclick="openModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold shadow-lg transition">
+                    <i class="fas fa-plus ml-1"></i> קריאה חדשה
+                </button>
+            </div>
         </div>
     </nav>
 
     <main class="max-w-7xl mx-auto p-6">
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-            <table class="w-full text-right">
-                <thead class="bg-gray-50 border-b text-gray-500 text-xs font-bold uppercase">
-                    <tr>
-                        <th class="p-4">מזהה</th>
-                        <th class="p-4">תיאור התקלה</th>
-                        <th class="p-4">עדיפות</th>
-                        <th class="p-4">סטטוס</th>
-                        <th class="p-4 text-center">פעולות</th>
+        
+        <div class="bg-white p-4 rounded-2xl shadow-sm border mb-6 flex flex-wrap gap-4 items-center">
+            <div class="relative flex-1 min-w-[300px]">
+                <i class="fas fa-search absolute right-3 top-3.5 text-gray-400"></i>
+                <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="חיפוש לפי שם לקוח, תיאור תקלה או מזהה..." class="w-full pr-10 p-3 bg-gray-50 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500 transition text-sm">
+            </div>
+            <select id="statusFilter" onchange="filterTable()" class="p-3 bg-gray-50 border rounded-xl outline-none text-sm font-bold text-gray-600">
+                <option value="all">כל הסטטוסים</option>
+                <option value="New">חדש (New)</option>
+                <option value="In Progress">בטיפול (In Progress)</option>
+                <option value="Resolved">הסתיים (Resolved)</option>
+            </select>
+            <div class="text-xs font-bold text-gray-400 mr-auto">
+                נמצאו <span id="ticketCount" class="text-blue-600">0</span> קריאות
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-xl border overflow-hidden">
+            <table class="w-full text-right" id="incidentsTable">
+                <thead class="bg-slate-50 border-b border-gray-200">
+                    <tr class="text-gray-500 text-xs font-bold uppercase">
+                        <th class="p-5">תאריך</th>
+                        <th class="p-5">לקוח ותיאור</th>
+                        <th class="p-5 text-center">עדיפות</th>
+                        <th class="p-5">סטטוס</th>
+                        <th class="p-5 text-center">פעולות</th>
                     </tr>
                 </thead>
                 <tbody id="incTableBody" class="divide-y divide-gray-100">
@@ -39,20 +71,28 @@
         </div>
     </main>
 
-    <div id="mainModal" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50">
-        <div class="bg-white w-full max-w-md p-8 rounded-2xl shadow-2xl mx-4">
-            <h3 class="text-xl font-bold mb-6">דיווח על תקלה חדשה</h3>
-            <div class="space-y-4">
-                <textarea id="form-desc" rows="3" placeholder="מה התקלה?" class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-500"></textarea>
-                <select id="form-prio" class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="P3 - Normal">P3 - רגיל</option>
-                    <option value="P2 - High">P2 - גבוה</option>
-                    <option value="P1 - Critical">P1 - קריטי</option>
-                </select>
-                <div class="flex gap-3">
-                    <button onclick="submitTicket()" class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition">שלח</button>
-                    <button onclick="closeModal()" class="flex-1 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl">ביטול</button>
+    <div id="mainModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center hidden z-[100]">
+        <div class="bg-white w-full max-w-lg p-8 rounded-3xl shadow-2xl mx-4 transform transition-all scale-100">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-black text-slate-800">פתיחת קריאת שירות</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-red-500"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <div class="space-y-5">
+                <div>
+                    <label class="block text-sm font-bold text-gray-600 mb-2">תיאור התקלה / שם לקוח</label>
+                    <textarea id="form-desc" rows="4" placeholder="לדוגמא: [אלדן] תקלה בשרת Exchange" class="w-full border-2 border-gray-100 rounded-2xl p-4 outline-none focus:border-blue-500 transition"></textarea>
                 </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-600 mb-2">רמת דחיפות</label>
+                    <div class="grid grid-cols-3 gap-3">
+                        <button onclick="setPrio('P3 - Normal', this)" class="prio-btn border-2 rounded-xl p-2 text-xs font-bold bg-blue-50 border-blue-500 text-blue-700">P3 רגיל</button>
+                        <button onclick="setPrio('P2 - High', this)" class="prio-btn border-2 border-gray-100 rounded-xl p-2 text-xs font-bold hover:bg-orange-50 transition">P2 גבוה</button>
+                        <button onclick="setPrio('P1 - Critical', this)" class="prio-btn border-2 border-gray-100 rounded-xl p-2 text-xs font-bold hover:bg-red-50 transition">P1 קריטי</button>
+                    </div>
+                </div>
+                <button onclick="submitTicket()" class="w-full bg-slate-900 text-white font-black py-4 rounded-2xl shadow-xl hover:bg-black transition transform hover:-translate-y-1">
+                    שיגור קריאה למערכת
+                </button>
             </div>
         </div>
     </div>
@@ -76,23 +116,65 @@
         const auth = getAuth(app);
         const colRef = collection(db, "incidents");
 
-        // אבטחה
+        let currentPrio = 'P3 - Normal';
+
         onAuthStateChanged(auth, (user) => { if (!user) window.location.href = "login.html"; });
 
         window.openModal = () => document.getElementById('mainModal').classList.remove('hidden');
         window.closeModal = () => document.getElementById('mainModal').classList.add('hidden');
 
+        window.setPrio = (p, btn) => {
+            currentPrio = p;
+            document.querySelectorAll('.prio-btn').forEach(b => {
+                b.classList.remove('bg-blue-50', 'border-blue-500', 'text-blue-700');
+                b.classList.add('border-gray-100');
+            });
+            btn.classList.add('bg-blue-50', 'border-blue-500', 'text-blue-700');
+        };
+
         window.submitTicket = async () => {
             const desc = document.getElementById('form-desc').value;
-            const prio = document.getElementById('form-prio').value;
-            if(!desc) return;
-            await addDoc(colRef, { desc, priority: prio, status: "New", timestamp: Date.now() });
+            if(!desc) return alert("נא למלא תיאור");
+            await addDoc(colRef, { desc, priority: currentPrio, status: "New", timestamp: Date.now() });
             window.closeModal();
             document.getElementById('form-desc').value = '';
         };
 
         window.updateStatus = async (id, s) => { await updateDoc(doc(db, "incidents", id), { status: s }); };
-        window.deleteDocById = async (id) => { if(confirm("למחוק?")) await deleteDoc(doc(db, "incidents", id)); };
+        
+        window.deleteDocById = async (id) => { 
+            if(confirm("למחוק סופית את הקריאה?")) await deleteDoc(doc(db, "incidents", id)); 
+        };
+
+        // פונקציית סינון
+        window.filterTable = () => {
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            const sFilter = document.getElementById('statusFilter').value;
+            const rows = document.querySelectorAll('#incTableBody tr');
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const text = row.innerText.toLowerCase();
+                const status = row.getAttribute('data-status');
+                const matchesSearch = text.includes(q);
+                const matchesStatus = (sFilter === 'all' || status === sFilter);
+
+                if(matchesSearch && matchesStatus) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            document.getElementById('ticketCount').innerText = visibleCount;
+        };
+
+        // ייצוא לאקסל
+        window.exportToExcel = () => {
+            const table = document.getElementById("incidentsTable");
+            const wb = XLSX.utils.table_to_book(table, {sheet: "Incidents"});
+            XLSX.writeFile(wb, `IT_Report_${new Date().toLocaleDateString()}.xlsx`);
+        };
 
         onSnapshot(query(colRef, orderBy("timestamp", "desc")), (snapshot) => {
             const tbody = document.getElementById('incTableBody');
@@ -100,23 +182,36 @@
             snapshot.forEach(docSnap => {
                 const d = docSnap.data();
                 const id = docSnap.id;
+                const dateStr = d.timestamp ? new Date(d.timestamp).toLocaleString('he-IL', {hour12:false}) : '---';
+                
+                let statusClass = d.status === 'New' ? 'status-new' : (d.status === 'In Progress' ? 'status-progress' : 'status-resolved');
+                let prioColor = d.priority.includes('P1') ? 'text-red-600 font-black' : (d.priority.includes('P2') ? 'text-orange-600' : 'text-blue-600');
+
                 tbody.innerHTML += `
-                    <tr class="hover:bg-gray-50 border-b border-gray-100 transition">
-                        <td class="p-4 text-xs font-mono text-blue-500">#${id.substring(0,6)}</td>
-                        <td class="p-4 font-semibold">${d.desc}</td>
-                        <td class="p-4"><span class="px-2 py-1 rounded text-[10px] font-bold ${d.priority.includes('P1') ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}">${d.priority}</span></td>
-                        <td class="p-4">
-                            <select onchange="updateStatus('${id}', this.value)" class="text-xs border rounded p-1">
-                                <option value="New" ${d.status === 'New' ? 'selected' : ''}>New</option>
-                                <option value="In Progress" ${d.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
-                                <option value="Resolved" ${d.status === 'Resolved' ? 'selected' : ''}>Resolved</option>
+                    <tr data-status="${d.status}" class="hover:bg-slate-50 transition border-b">
+                        <td class="p-5 text-[11px] text-gray-400 font-mono">${dateStr}</td>
+                        <td class="p-5">
+                            <div class="font-bold text-slate-800">${d.desc}</div>
+                            <div class="text-[10px] text-gray-400 uppercase">ID: ${id.substring(0,8)}</div>
+                        </td>
+                        <td class="p-5 text-center">
+                            <span class="text-xs ${prioColor}">${d.priority}</span>
+                        </td>
+                        <td class="p-5">
+                            <select onchange="updateStatus('${id}', this.value)" class="text-xs font-bold rounded-full px-3 py-1 outline-none border-none cursor-pointer ${statusClass}">
+                                <option value="New" ${d.status === 'New' ? 'selected' : ''}>חדש</option>
+                                <option value="In Progress" ${d.status === 'In Progress' ? 'selected' : ''}>בטיפול</option>
+                                <option value="Resolved" ${d.status === 'Resolved' ? 'selected' : ''}>בוצע</option>
                             </select>
                         </td>
-                        <td class="p-4 text-center">
-                            <button onclick="deleteDocById('${id}')" class="text-gray-300 hover:text-red-500"><i class="fas fa-trash-alt"></i></button>
+                        <td class="p-5 text-center">
+                            <button onclick="deleteDocById('${id}')" class="text-gray-300 hover:text-red-500 transition p-2">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
                         </td>
                     </tr>`;
             });
+            filterTable(); // רענון סינון לאחר טעינה
         });
     </script>
 </body>
