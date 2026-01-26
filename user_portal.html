@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מרכז תמיכה | פתיחת קריאה</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700&display=swap');
+        body { 
+            font-family: 'Assistant', sans-serif; 
+            background-color: #f1f5f9; 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column; 
+            min-height: 100vh;
+        }
+        .header-banner { background-color: #1e293b; color: white; padding: 2rem 1rem; text-align: center; }
+        .input-white { 
+            background-color: white; 
+            border: 2px solid #e2e8f0; 
+            color: #1e293b; 
+            padding: 12px; 
+            border-radius: 12px; 
+            outline: none; 
+            width: 100%;
+            font-size: 1rem;
+        }
+        .input-white:focus { border-color: #10b981; box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1); }
+        .form-card { background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+    </style>
+</head>
+<body>
+
+    <header class="header-banner">
+        <h1 class="text-3xl font-black italic mb-2">IT CONTROL | SUPPORT</h1>
+        <p class="text-slate-400 font-bold uppercase tracking-widest text-xs">מרכז שירות ותמיכה טכנית</p>
+    </header>
+
+    <main class="flex-1 flex items-center justify-center p-6">
+        <div class="form-card w-full max-w-xl p-8 md:p-12">
+            <div class="flex items-center gap-4 mb-8 border-b pb-6">
+                <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-xl">
+                    <i class="fas fa-headset"></i>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800">פתיחת קריאת שירות חדשה</h2>
+                    <p class="text-slate-500 text-sm">מלא את הפרטים ונחזור אליך בהקדם</p>
+                </div>
+            </div>
+
+            <form id="userIncidentForm" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">שם מלא / מחלקה</label>
+                    <input type="text" id="user-name" required class="input-white" placeholder="לדוגמה: ישראל ישראלי - הנהלת חשבונות">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">מה הבעיה?</label>
+                    <input type="text" id="incident-title" required class="input-white" placeholder="נושא קצר (לדוגמה: המדפסת לא עובדת)">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">רמת דחיפות</label>
+                    <select id="user-priority" class="input-white">
+                        <option value="נמוכה">לא דחוף (טיפול שוטף)</option>
+                        <option value="בינונית" selected>דחוף במידה בינונית</option>
+                        <option value="גבוהה">דחוף ביותר - משבית עבודה 🔥</option>
+                    </select>
+                </div>
+
+                <div class="pt-4">
+                    <button type="submit" id="submitBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-4 rounded-xl shadow-lg shadow-emerald-600/20 transition-all transform hover:-translate-y-1">
+                        שלח קריאה לצוות IT
+                    </button>
+                </div>
+            </form>
+
+            <div id="successMsg" class="hidden mt-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl text-center font-bold animate-bounce">
+                <i class="fas fa-check-circle ml-2"></i> הקריאה נשלחה בהצלחה! צוות IT יטפל בזה.
+            </div>
+        </div>
+    </main>
+
+    <footer class="p-6 text-center text-slate-400 text-xs font-bold uppercase">
+        RCC IT SOLUTIONS &copy; 2026
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = { 
+            apiKey: "AIzaSyCkmi_WVVGk6PvIGoh8FEzXOyzzDN2jJqA", 
+            authDomain: "itservice-ef2cb.firebaseapp.com", 
+            projectId: "itservice-ef2cb", 
+            storageBucket: "itservice-ef2cb.firebasestorage.app", 
+            messagingSenderId: "585535831360", 
+            appId: "1:585535831360:web:8b84f53b6892a2fc490ea5" 
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const form = document.getElementById('userIncidentForm');
+        const successMsg = document.getElementById('successMsg');
+        const submitBtn = document.getElementById('submitBtn');
+
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            
+            submitBtn.disabled = true;
+            submitBtn.innerText = "שולח...";
+
+            try {
+                await addDoc(collection(db, "incidents"), {
+                    user: document.getElementById('user-name').value,
+                    title: document.getElementById('incident-title').value,
+                    priority: document.getElementById('user-priority').value,
+                    status: "פתוח",
+                    timestamp: Date.now(),
+                    source: "פורטל משתמש"
+                });
+
+                form.reset();
+                form.classList.add('hidden');
+                successMsg.classList.remove('hidden');
+                
+                // החזרת הטופס אחרי 5 שניות
+                setTimeout(() => {
+                    successMsg.classList.add('hidden');
+                    form.classList.remove('hidden');
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = "שלח קריאה לצוות IT";
+                }, 5000);
+
+            } catch (error) {
+                alert("שגיאה בשליחת הקריאה. נסה שוב מאוחר יותר.");
+                submitBtn.disabled = false;
+                submitBtn.innerText = "שלח קריאה לצוות IT";
+            }
+        };
+    </script>
+</body>
+</html>

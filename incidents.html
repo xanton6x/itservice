@@ -1,157 +1,22 @@
-<!DOCTYPE html>
-<html lang="he" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <title>ניהול קריאות | IT Control</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700&display=swap');
-        body { font-family: 'Assistant', sans-serif; background-color: #f1f5f9; display: flex; margin: 0; }
-        .sidebar { width: 260px; background-color: #1e293b; color: white; min-height: 100vh; flex-shrink: 0; }
-        .card { background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .active-link { background-color: #334155; border-right: 4px solid #10b981; }
-        
-        /* שדות קלט לבנים עם טקסט שחור */
-        .input-white { 
-            background-color: white; 
-            border: 2px solid #e2e8f0; 
-            color: #1e293b; 
-            padding: 12px; 
-            border-radius: 10px; 
-            outline: none; 
-            width: 100%;
-            font-weight: 500;
+<div class="card p-6 mb-8 flex flex-wrap items-end gap-4 bg-white border-2 border-emerald-500/20">
+    <div class="flex-1 min-w-[200px]">
+        <label class="block text-xs font-bold text-slate-400 mb-1">חיפוש חופשי</label>
+        <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="חפש לפי נושא או שם..." class="w-full bg-slate-50 border-2 border-slate-100 p-3 rounded-xl focus:bg-white focus:border-emerald-500 transition outline-none text-slate-800 font-bold">
+    </div>
+    <div class="flex-1 min-w-[150px]">
+        <label class="block text-xs font-bold text-slate-400 mb-1">נושא חדש</label>
+        <input type="text" id="inc-title" placeholder="מה הבעיה?" class="w-full bg-white border-2 border-slate-100 p-3 rounded-xl focus:border-emerald-500 transition outline-none font-bold">
+    </div>
+    <button onclick="addIncident()" class="bg-emerald-600 text-white px-8 py-3.5 rounded-xl font-black hover:bg-emerald-700 shadow-lg shadow-emerald-600/30 transition-all active:scale-95">פתח קריאה</button>
+</div>
+
+<script>
+    function filterTable() {
+        const input = document.getElementById("searchInput").value.toUpperCase();
+        const rows = document.getElementById("incidents-table-body").getElementsByTagName("tr");
+        for (let i = 0; i < rows.length; i++) {
+            const text = rows[i].innerText.toUpperCase();
+            rows[i].style.display = text.includes(input) ? "" : "none";
         }
-        .input-white:focus { border-color: #10b981; }
-        .input-white::placeholder { color: #94a3b8; }
-
-        /* תגיות סטטוס */
-        .status-open { background: #fee2e2; color: #ef4444; }
-        .status-progress { background: #dbeafe; color: #3b82f6; }
-        .status-closed { background: #d1fae5; color: #10b981; }
-    </style>
-</head>
-<body>
-
-    <aside class="sidebar flex flex-col">
-        <div class="p-6 text-2xl font-bold border-b border-slate-700 text-emerald-400 italic text-center">IT CONTROL</div>
-        <nav class="flex-1 mt-4">
-            <a href="index.html" class="flex items-center gap-4 px-6 py-4 hover:bg-slate-700 transition"><i class="fas fa-home"></i> דאשבורד</a>
-            <a href="incidents.html" class="flex items-center gap-4 px-6 py-4 active-link transition"><i class="fas fa-ticket-alt"></i> קריאות שירות</a>
-            <a href="eset_licenses.html" class="flex items-center gap-4 px-6 py-4 hover:bg-slate-700 transition"><i class="fas fa-shield-alt"></i> רישיונות ESET</a>
-            <a href="reports.html" class="flex items-center gap-4 px-6 py-4 hover:bg-slate-700 transition"><i class="fas fa-chart-bar"></i> דוחות</a>
-            <a href="admin_users.html" class="flex items-center gap-4 px-6 py-4 hover:bg-slate-700 transition"><i class="fas fa-users-cog"></i> ניהול משתמשים</a>
-        </nav>
-    </aside>
-
-    <main class="flex-1 p-10">
-        <div class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl font-bold text-slate-800">מרכז קריאות שירות</h1>
-            <div id="count-badge" class="bg-blue-600 text-white px-4 py-1 rounded-full text-sm font-bold">טוען...</div>
-        </div>
-
-        <div class="card p-6 mb-8 bg-white border border-slate-200">
-            <h3 class="font-bold mb-4 text-slate-700">פתיחת קריאה חדשה</h3>
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <input type="text" id="inc-title" placeholder="נושא התקלה" class="input-white">
-                <input type="text" id="inc-user" placeholder="שם המשתמש" class="input-white">
-                <select id="inc-priority" class="input-white">
-                    <option value="נמוכה">עדיפות נמוכה</option>
-                    <option value="בינונית">עדיפות בינונית</option>
-                    <option value="גבוהה">עדיפות גבוהה 🔥</option>
-                </select>
-                <button onclick="addIncident()" class="bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition shadow-lg shadow-emerald-600/20">
-                    שלח קריאה
-                </button>
-            </div>
-        </div>
-
-        <div class="card overflow-hidden">
-            <table class="w-full text-right">
-                <thead class="bg-slate-50 border-b">
-                    <tr>
-                        <th class="p-4 text-slate-500 font-bold">נושא</th>
-                        <th class="p-4 text-slate-500 font-bold">משתמש</th>
-                        <th class="p-4 text-slate-500 font-bold">עדיפות</th>
-                        <th class="p-4 text-slate-500 font-bold text-center">סטטוס</th>
-                        <th class="p-4 text-slate-500 font-bold text-center">פעולות</th>
-                    </tr>
-                </thead>
-                <tbody id="incidents-table-body" class="divide-y text-slate-700">
-                    </tbody>
-            </table>
-        </div>
-    </main>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-        const firebaseConfig = { apiKey: "AIzaSyCkmi_WVVGk6PvIGoh8FEzXOyzzDN2jJqA", authDomain: "itservice-ef2cb.firebaseapp.com", projectId: "itservice-ef2cb", storageBucket: "itservice-ef2cb.firebasestorage.app", messagingSenderId: "585535831360", appId: "1:585535831360:web:8b84f53b6892a2fc490ea5" };
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-
-        onAuthStateChanged(auth, user => { if(!user) window.location.href="login.html"; });
-
-        // טעינת נתונים בזמן אמת
-        const q = query(collection(db, "incidents"), orderBy("timestamp", "desc"));
-        onSnapshot(q, snap => {
-            const tbody = document.getElementById('incidents-table-body');
-            document.getElementById('count-badge').innerText = `${snap.size} קריאות במערכת`;
-            tbody.innerHTML = '';
-            
-            snap.forEach(d => {
-                const item = d.data();
-                const statusClass = item.status === 'פתוח' ? 'status-open' : (item.status === 'בטיפול' ? 'status-progress' : 'status-closed');
-                
-                tbody.innerHTML += `
-                    <tr class="hover:bg-slate-50 transition">
-                        <td class="p-4 font-bold text-slate-800">${item.title}</td>
-                        <td class="p-4 text-slate-600">${item.user}</td>
-                        <td class="p-4 text-xs font-bold">${item.priority || 'רגיל'}</td>
-                        <td class="p-4 text-center">
-                            <select onchange="updateStatus('${d.id}', this.value)" class="text-xs font-bold rounded-full px-3 py-1 outline-none ${statusClass} cursor-pointer">
-                                <option value="פתוח" ${item.status === 'פתוח' ? 'selected' : ''}>פתוח</option>
-                                <option value="בטיפול" ${item.status === 'בטיפול' ? 'selected' : ''}>בטיפול</option>
-                                <option value="סגור" ${item.status === 'סגור' ? 'selected' : ''}>סגור</option>
-                            </select>
-                        </td>
-                        <td class="p-4 text-center">
-                            <button onclick="deleteInc('${d.id}')" class="text-slate-300 hover:text-red-500 transition px-2">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            });
-        });
-
-        // פונקציות
-        window.addIncident = async () => {
-            const title = document.getElementById('inc-title').value;
-            const user = document.getElementById('inc-user').value;
-            const priority = document.getElementById('inc-priority').value;
-            
-            if(!title || !user) return alert("נא למלא נושא ושם משתמש");
-            
-            await addDoc(collection(db, "incidents"), {
-                title, user, priority, status: "פתוח", timestamp: Date.now()
-            });
-            
-            document.getElementById('inc-title').value = '';
-            document.getElementById('inc-user').value = '';
-        };
-
-        window.updateStatus = async (id, newStatus) => {
-            await updateDoc(doc(db, "incidents", id), { status: newStatus });
-        };
-
-        window.deleteInc = async id => {
-            if(confirm("למחוק את הקריאה?")) await deleteDoc(doc(db, "incidents", id));
-        };
-    </script>
-</body>
-</html>
+    }
+</script>
