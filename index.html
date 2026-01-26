@@ -3,379 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ServiceNow Ultimate Enterprise</title>
+    <title>IT Management System | RCC</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .sn-dark { background-color: #162122; }
-        .sn-sidebar { background-color: #2c3e3f; width: 260px; transition: all 0.3s; }
-        .active-tab { background-color: #435a5c; border-right: 4px solid #4ade80; color: white; shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
-        .glass-modal { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.3); }
-        .sla-warning { animation: blink 2s infinite; }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .sn-sidebar { background-color: #162122; color: #a5b1b2; }
+        .active-tab { background-color: #34494a; color: white; border-right: 4px solid #22c55e; }
+        .hidden { display: none; }
     </style>
 </head>
-<body class="bg-[#f0f3f4] text-gray-800">
+<body class="flex h-screen overflow-hidden">
 
-    <nav class="sn-dark text-white h-14 flex justify-between items-center px-6 sticky top-0 z-[100] shadow-2xl">
-        <div class="flex items-center gap-10">
-            <div class="text-lg font-black tracking-widest flex items-center gap-2">
-                <div class="w-6 h-6 bg-green-500 rounded-sm"></div> SERVICE<span class="text-green-400">NOW</span>
-            </div>
-            <div class="relative group hidden lg:block">
-                <input type="text" id="globalSearch" onkeyup="filterIncidents()" placeholder="חפש בכל המערכת (SYS_ID, תיאור...)" 
-                       class="bg-[#243536] text-xs rounded-sm px-10 py-2 w-[400px] border border-transparent focus:border-green-500 outline-none transition-all">
-                <i class="fas fa-search absolute right-3 top-2.5 text-gray-500"></i>
-            </div>
+    <aside class="w-64 sn-sidebar flex-shrink-0 flex flex-col">
+        <div class="p-6 text-white font-bold text-xl border-b border-gray-700 flex items-center gap-2">
+            <i class="fas fa-microchip text-green-400"></i> IT CONTROL
         </div>
-        <div class="flex items-center gap-6">
-            <div id="sync-indicator" class="flex items-center gap-2 text-[10px] text-green-400 font-mono">
-                <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div> REALTIME SYNC
-            </div>
-            <button onclick="exportToCSV()" class="text-xs bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded transition">EXPORT</button>
-            <div class="flex items-center gap-3 border-r border-gray-700 pr-5">
-                <i class="fas fa-user-shield text-green-400"></i>
-                <span class="text-xs font-semibold uppercase tracking-tighter">System Administrator</span>
-            </div>
+        <nav class="flex-1 mt-4 space-y-1">
+            <button onclick="showModule('dashboard')" id="btn-dashboard" class="w-full text-right py-3 px-6 flex items-center gap-4 active-tab transition">
+                <i class="fas fa-chart-line w-5"></i> דאשבורד
+            </button>
+            <button onclick="showModule('incidents')" id="btn-incidents" class="w-full text-right py-3 px-6 flex items-center gap-4 hover:bg-[#34494a] hover:text-white transition">
+                <i class="fas fa-ticket-alt w-5"></i> קריאות שירות
+            </button>
+            <a href="eset_licenses.html" class="w-full text-right py-3 px-6 flex items-center gap-4 hover:bg-[#34494a] hover:text-white transition">
+                <i class="fas fa-shield-alt w-5 text-emerald-400"></i> רישיונות ESET
+            </a>
+            <a href="admin_users.html" class="w-full text-right py-3 px-6 flex items-center gap-4 hover:bg-[#34494a] hover:text-white transition">
+                <i class="fas fa-users-cog w-5"></i> ניהול משתמשים
+            </a>
+        </nav>
+        <div class="p-4 border-t border-gray-700 text-xs">
+            <div id="user-display-name" class="mb-2 text-gray-400 truncate">טוען משתמש...</div>
+            <button onclick="logout()" class="text-red-400 hover:text-red-300 transition">
+                <i class="fas fa-sign-out-alt"></i> התנתק מהמערכת
+            </button>
         </div>
-    </nav>
+    </aside>
 
-    <div class="flex">
-        <aside class="sn-sidebar h-[calc(100vh-56px)] text-gray-400 py-6 overflow-y-auto shadow-inner">
-            <div class="px-6 mb-4 text-[10px] uppercase font-bold text-gray-500 tracking-widest">Favorites</div>
-            <nav class="space-y-1">
-    <button onclick="showModule('dashboard')" id="btn-dashboard" class="w-full text-right py-3 px-6 flex items-center gap-4 active-tab">
-        <i class="fas fa-th-large w-4 text-center"></i> דאשבורד ניהולי
-    </button>
-    
-    <a href="eset_licenses.html" class="w-full text-right py-3 px-6 flex items-center gap-4 text-gray-400 hover:bg-[#34494a] hover:text-white transition">
-        <i class="fas fa-shield-alt w-4 text-center text-emerald-400"></i> ניהול רישיונות ESET
-    </a>
-
-    <button onclick="showModule('incidents')" id="btn-incidents" class="w-full text-right py-3 px-6 flex items-center gap-4 hover:bg-[#34494a] hover:text-white transition">
-        <i class="fas fa-exclamation-circle w-4 text-center"></i> קריאות שירות (Incidents)
-    </button>
-    </nav>
-        </aside>
-
-        <main class="flex-1 p-8 h-[calc(100vh-56px)] overflow-y-auto scroll-smooth">
-            
-            <div id="mod-dashboard" class="module space-y-8">
-                <div class="flex justify-between items-center">
-                    <h1 class="text-2xl font-light">Service Management <span class="font-bold">Overview</span></h1>
-                    <div class="text-sm text-gray-500 bg-white px-4 py-2 rounded-full shadow-sm" id="live-clock"></div>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <div class="bg-white p-6 rounded-sm shadow-sm border-t-2 border-green-500">
-                        <div class="text-gray-400 text-[10px] font-bold uppercase mb-2">Total Open</div>
-                        <div class="text-4xl font-light" id="stat-total">0</div>
-                    </div>
-                    <div class="bg-white p-6 rounded-sm shadow-sm border-t-2 border-red-500 bg-red-50/20">
-                        <div class="text-red-400 text-[10px] font-bold uppercase mb-2">High Urgency</div>
-                        <div class="text-4xl font-bold text-red-600" id="stat-high">0</div>
-                    </div>
-                    <div class="bg-white p-6 rounded-sm shadow-sm border-t-2 border-blue-500">
-                        <div class="text-gray-400 text-[10px] font-bold uppercase mb-2">Resolved (24h)</div>
-                        <div class="text-4xl font-light" id="stat-resolved">0</div>
-                    </div>
-                    <div class="bg-white p-6 rounded-sm shadow-sm border-t-2 border-orange-400">
-                        <div class="text-gray-400 text-[10px] font-bold uppercase mb-2">Pending Approvals</div>
-                        <div class="text-4xl font-light" id="stat-pending">0</div>
-                        <div class="bg-white p-6 rounded-xl shadow-sm border-r-4 border-emerald-500 hover:shadow-md transition cursor-pointer" onclick="window.location.href='eset_licenses.html'">
-    <div class="flex justify-between items-start">
-        <div>
-            <p class="text-gray-400 text-[10px] font-bold uppercase tracking-widest">רישיונות ESET בטיפול</p>
-            <h2 id="dash-eset-alerts" class="text-3xl font-black mt-2 text-gray-800">0</h2>
-        </div>
-        <div class="bg-emerald-50 p-2 rounded-lg">
-            <i class="fas fa-shield-alt text-emerald-600"></i>
-        </div>
-    </div>
-    <p id="dash-eset-status" class="text-[11px] mt-4 text-emerald-600 font-medium">הכל מעודכן ותקין</p>
-</div>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-10">
-                    <div class="bg-white p-6 rounded shadow-sm border border-gray-100">
-                        <h3 class="text-sm font-bold mb-4 flex items-center gap-2"><i class="fas fa-bolt text-yellow-500"></i> פעולות מהירות</h3>
-                        <div class="grid grid-cols-2 gap-4">
-                            <button onclick="quickReport('Network')" class="p-4 bg-gray-50 hover:bg-gray-100 text-xs rounded text-right border border-gray-100">דווח על תקלת רשת</button>
-                            <button onclick="quickReport('Hardware')" class="p-4 bg-gray-50 hover:bg-gray-100 text-xs rounded text-right border border-gray-100">הזמנת ציוד חדש</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="mod-incidents" class="module hidden">
-                <div class="flex justify-between items-center mb-6">
-                    <div class="flex items-center gap-4">
-                        <h2 class="text-xl font-bold tracking-tight">Incidents List</h2>
-                        <div class="h-4 w-[1px] bg-gray-300"></div>
-                        <span class="text-xs text-gray-500 uppercase tracking-widest">All Active Records</span>
-                    </div>
-                    <button onclick="openModal()" class="bg-[#2c3e3f] hover:bg-[#1a2526] text-white px-6 py-2 rounded-sm text-xs font-bold shadow-xl transition-all">
-                        CREATE NEW
-                    </button>
-                </div>
-                
-                <div class="bg-white shadow-2xl rounded-sm overflow-hidden border border-gray-200">
-                    <table class="w-full text-right text-xs">
-                        <thead class="bg-gray-50 border-b border-gray-200 text-gray-600 uppercase">
-                            <tr>
-                                <th class="p-4 font-bold">Number</th>
-                                <th class="p-4 font-bold">Short Description</th>
-                                <th class="p-4 font-bold">Urgency</th>
-                                <th class="p-4 font-bold">Status</th>
-                                <th class="p-4 font-bold">Created</th>
-                                <th class="p-4 font-bold">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="incTableBody" class="divide-y divide-gray-100">
-                            </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div id="mod-approvals" class="module hidden">
-                <h2 class="text-2xl font-bold mb-6">Pending Approvals</h2>
-                <div id="approvalList" class="space-y-4">
-                    <div class="bg-white p-8 text-center text-gray-400 border-2 border-dashed rounded-xl">
-                        No pending requests found for your account.
-                    </div>
-                </div>
-            </div>
-
-        </main>
-    </div>
-
-    <div id="mainModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-md z-[200] flex items-center justify-center p-4">
-        <div class="glass-modal w-full max-w-2xl rounded-sm shadow-2xl overflow-hidden border border-white/50">
-            <div class="bg-[#2c3e3f] p-4 text-white flex justify-between items-center">
-                <span class="text-xs font-bold tracking-widest uppercase">New Incident Record</span>
-                <button onclick="closeModal()" class="hover:rotate-90 transition-transform">✕</button>
-            </div>
-            <div class="p-8 grid grid-cols-2 gap-6 text-right">
-                <div class="col-span-2">
-                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-2 tracking-widest">Short Description</label>
-                    <input type="text" id="form-desc" class="w-full border-b-2 border-gray-200 focus:border-green-500 outline-none p-2 bg-transparent text-sm transition-colors">
-                </div>
-                <div>
-                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-2 tracking-widest">Urgency</label>
-                    <select id="form-prio" class="w-full border-b-2 border-gray-200 focus:border-green-500 outline-none p-2 bg-transparent text-sm">
-                        <option value="1 - High">1 - High</option>
-                        <option value="2 - Medium" selected>2 - Medium</option>
-                        <option value="3 - Low">3 - Low</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-2 tracking-widest">Category</label>
-                    <select id="form-cat" class="w-full border-b-2 border-gray-200 focus:border-green-500 outline-none p-2 bg-transparent text-sm">
-                        <option>Network</option>
-                        <option>Hardware</option>
-                        <option>Software</option>
-                        <option>Database</option>
-                    </select>
-                </div>
-                <div class="col-span-2 pt-6">
-                    <button onclick="submitTicket()" class="w-full bg-green-600 text-white py-4 rounded-sm text-xs font-bold hover:bg-green-700 shadow-xl transition-all uppercase tracking-widest">
-                        Submit Record
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyCkmi_WVVGk6PvIGoh8FEzXOyzzDN2jJqA",
-            authDomain: "itservice-ef2cb.firebaseapp.com",
-            projectId: "itservice-ef2cb",
-            storageBucket: "itservice-ef2cb.firebasestorage.app",
-            messagingSenderId: "585535831360",
-            appId: "1:585535831360:web:8b84f53b6892a2fc490ea5"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const incCol = collection(db, "incidents");
-
-        // UI Management
-        window.showModule = (id) => {
-            document.querySelectorAll('.module').forEach(m => m.classList.add('hidden'));
-            document.getElementById('mod-' + id).classList.remove('hidden');
-            document.querySelectorAll('.sn-sidebar button').forEach(b => b.classList.remove('active-tab'));
-            document.getElementById('btn-' + id).classList.add('active-tab');
-        };
-
-        window.openModal = () => document.getElementById('mainModal').classList.remove('hidden');
-        window.closeModal = () => document.getElementById('mainModal').classList.add('hidden');
-
-        // Logic: Realtime Sync & Analytics
-        onSnapshot(query(incCol, orderBy("timestamp", "desc")), (snapshot) => {
-            const tbody = document.getElementById('incTableBody');
-            tbody.innerHTML = '';
-            let stats = { total: 0, high: 0, resolved: 0, pending: 0 };
-
-            snapshot.forEach((docSnap) => {
-                const data = docSnap.data();
-                const id = docSnap.id;
-                stats.total++;
-                if(data.priority.includes('1')) stats.high++;
-                if(data.status === 'Resolved') stats.resolved++;
-                if(data.status === 'Pending') stats.pending++;
-
-                tbody.innerHTML += `
-                    <tr class="group hover:bg-gray-50 transition-all border-b border-gray-100">
-                        <td class="p-4 font-mono font-bold text-blue-600 select-all tracking-tighter">${id.substring(0,10)}</td>
-                        <td class="p-4 font-semibold text-gray-700">${data.desc}</td>
-                        <td class="p-4">
-                            <span class="px-2 py-0.5 rounded-full text-[9px] font-bold ${data.priority.includes('1') ? 'bg-red-100 text-red-600 sla-warning' : 'bg-gray-100 text-gray-500'}">
-                                ${data.priority}
-                            </span>
-                        </td>
-                        <td class="p-4 text-gray-500 font-medium">
-                            <select onchange="updateStatus('${id}', this.value)" class="bg-transparent border-none focus:ring-0 cursor-pointer hover:bg-white px-2 rounded">
-                                <option ${data.status === 'New' ? 'selected' : ''}>New</option>
-                                <option ${data.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
-                                <option ${data.status === 'Resolved' ? 'selected' : ''}>Resolved</option>
-                                <option ${data.status === 'Pending' ? 'selected' : ''}>Pending</option>
-                            </select>
-                        </td>
-                        <td class="p-4 text-gray-400 italic">${new Date(data.timestamp).toLocaleTimeString('he-IL')}</td>
-                        <td class="p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onclick="deleteDocById('${id}')" class="text-gray-300 hover:text-red-500 transition-colors"><i class="fas fa-trash-alt"></i></button>
-                        </td>
-                    </tr>
-                `;
-            });
-
-            // Update Dashboard Stats
-            document.getElementById('stat-total').innerText = stats.total;
-            document.getElementById('stat-high').innerText = stats.high;
-            document.getElementById('stat-resolved').innerText = stats.resolved;
-            document.getElementById('stat-pending').innerText = stats.pending;
-            
-            // Toggle Approval Badge
-            const badge = document.getElementById('approval-badge');
-            if(stats.pending > 0) {
-                badge.innerText = stats.pending;
-                badge.classList.remove('hidden');
-            } else {
-                badge.classList.add('hidden');
-            }
-        });
-
-        // Write Operations
-        window.submitTicket = async () => {
-            const desc = document.getElementById('form-desc').value;
-            const prio = document.getElementById('form-prio').value;
-            if(!desc) return;
-
-            await addDoc(incCol, {
-                desc: desc,
-                priority: prio,
-                status: "New",
-                timestamp: Date.now()
-            });
-
-            document.getElementById('form-desc').value = '';
-            closeModal();
-        };
-
-        window.updateStatus = async (id, newStatus) => {
-            await updateDoc(doc(db, "incidents", id), { status: newStatus });
-        };
-
-        window.deleteDocById = async (id) => {
-            if(confirm("המחיקה תתבצע ב-Realtime לכל המשתמשים. להמשיך?")) {
-                await deleteDoc(doc(db, "incidents", id));
-            }
-        };
-
-        // Export Functionality
-        window.exportToCSV = () => {
-            const rows = [['SysID', 'Description', 'Priority', 'Status']];
-            document.querySelectorAll('#incTableBody tr').forEach(tr => {
-                const row = Array.from(tr.cells).slice(0, 4).map(c => c.innerText);
-                rows.push(row);
-            });
-            let csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
-            const link = document.createElement("a");
-            link.setAttribute("href", encodeURI(csvContent));
-            link.setAttribute("download", "servicenow_export.csv");
-            document.body.appendChild(link);
-            link.click();
-        };
-
-        // Utility: Clock
-        setInterval(() => {
-            document.getElementById('live-clock').innerText = new Date().toLocaleTimeString('he-IL', {hour12: false}) + " | UTC+2";
-        }, 1000);
-// הוסף את זה בתוך ה-script type="module" ב-index.html
-import { collection, onSnapshot, query } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-// התחברות למאגר הרישיונות (db כבר מוגדר אצלך)
-const esetCol = collection(db, "eset_licenses");
-
-onSnapshot(esetCol, (snapshot) => {
-    let alertCount = 0;
-    const now = new Date();
-
-    snapshot.forEach(doc => {
-        const data = doc.data();
-        const expDate = new Date(data.expiryDate);
-        const diffDays = Math.ceil((expDate - now) / (1000 * 60 * 60 * 24));
-
-        // אם הרישיון פג או עומד לפוג ב-30 יום הקרובים
-        if (diffDays <= 30) {
-            alertCount++;
-        }
-    });
-
-    const alertElement = document.getElementById('dash-eset-alerts');
-    const statusElement = document.getElementById('dash-eset-status');
-
-    alertElement.innerText = alertCount;
-
-    if (alertCount > 0) {
-        alertElement.classList.add('text-red-600');
-        statusElement.innerText = `ישנם ${alertCount} רישיונות הדורשים חידוש!`;
-        statusElement.classList.replace('text-emerald-600', 'text-red-600');
-        statusElement.parentElement.classList.replace('border-emerald-500', 'border-red-500');
-    } else {
-        alertElement.classList.remove('text-red-600');
-        statusElement.innerText = "כל הרישיונות בתוקף";
-        statusElement.classList.replace('text-red-600', 'text-emerald-600');
-        statusElement.parentElement.classList.replace('border-red-500', 'border-emerald-500');
-    }
-});
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-const auth = getAuth(app);
-
-// בדיקה אם המשתמש מחובר
-onAuthStateChanged(auth, (user) => {
-    if (!user) {
-        // אם לא מחובר, שלח אותו לדף לוגין (ניצור אותו מיד)
-        window.location.href = "login.html";
-    }
-});
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-const auth = getAuth(app);
-onAuthStateChanged(auth, (user) => {
-    if (!user) {
-        window.location.href = "login.html"; // אם לא מחובר, זרוק אותו ללוגין
-    }
-});
+    <main class="flex-1 flex flex-col overflow-y-auto">
         
-    </script>
-</body>
-</html>
+        <div id="mod-dashboard" class="module p-8">
+            <h1 class="text-2xl font-bold mb-8">סקירה כללית</h1>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm border-r-4 border-blue-500">
+                    <p class="text-gray-400 text-xs font-bold uppercase">סה"כ קריאות</p>
+                    <h2 id="stat-total" class="text-3xl font-bold mt-2">0</h2>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border-r-4 border-red-500">
+                    <p class="text-red-500 text-xs font-bold uppercase">קריאות דחופות (P1)</p>
+                    <h2 id="stat-high" class="text-3xl font-bold mt-2 text-red-600">0</h2>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border-r-4 border-emerald-500 cursor-pointer hover:bg-gray-50 transition" onclick="window.location.href='eset_licenses.html'">
+                    <p class="text-emerald-600 text-xs font-bold uppercase">ESET - דורש חידוש</p>
+                    <h2 id="dash-eset-alerts" class="text-3xl font-
