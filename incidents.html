@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ניהול קריאות שירות | IT System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+    <nav class="bg-slate-900 text-white p-4 shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <a href="index.html" class="text-gray-400 hover:text-white transition"><i class="fas fa-arrow-right"></i> חזרה</a>
+                <h1 class="text-xl font-bold"><i class="fas fa-ticket-alt text-blue-400"></i> מוקד קריאות שירות</h1>
+            </div>
+            <button onclick="openModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold transition">
+                <i class="fas fa-plus"></i> פתיחת קריאה חדשה
+            </button>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto p-6">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <table class="w-full text-right">
+                <thead class="bg-gray-50 border-b text-gray-500 text-xs font-bold uppercase">
+                    <tr>
+                        <th class="p-4">מזהה</th>
+                        <th class="p-4">תיאור התקלה</th>
+                        <th class="p-4">עדיפות</th>
+                        <th class="p-4">סטטוס</th>
+                        <th class="p-4 text-center">פעולות</th>
+                    </tr>
+                </thead>
+                <tbody id="incTableBody" class="divide-y divide-gray-100">
+                    </tbody>
+            </table>
+        </div>
+    </main>
+
+    <div id="mainModal" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50">
+        <div class="bg-white w-full max-w-md p-8 rounded-2xl shadow-2xl mx-4">
+            <h3 class="text-xl font-bold mb-6">דיווח על תקלה חדשה</h3>
+            <div class="space-y-4">
+                <textarea id="form-desc" rows="3" placeholder="מה התקלה?" class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                <select id="form-prio" class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="P3 - Normal">P3 - רגיל</option>
+                    <option value="P2 - High">P2 - גבוה</option>
+                    <option value="P1 - Critical">P1 - קריטי</option>
+                </select>
+                <div class="flex gap-3">
+                    <button onclick="submitTicket()" class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition">שלח</button>
+                    <button onclick="closeModal()" class="flex-1 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl">ביטול</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCkmi_WVVGk6PvIGoh8FEzXOyzzDN2jJqA",
+            authDomain: "itservice-ef2cb.firebaseapp.com",
+            projectId: "itservice-ef2cb",
+            storageBucket: "itservice-ef2cb.firebasestorage.app",
+            messagingSenderId: "585535831360",
+            appId: "1:585535831360:web:8b84f53b6892a2fc490ea5"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const colRef = collection(db, "incidents");
+
+        // אבטחה
+        onAuthStateChanged(auth, (user) => { if (!user) window.location.href = "login.html"; });
+
+        window.openModal = () => document.getElementById('mainModal').classList.remove('hidden');
+        window.closeModal = () => document.getElementById('mainModal').classList.add('hidden');
+
+        window.submitTicket = async () => {
+            const desc = document.getElementById('form-desc').value;
+            const prio = document.getElementById('form-prio').value;
+            if(!desc) return;
+            await addDoc(colRef, { desc, priority: prio, status: "New", timestamp: Date.now() });
+            window.closeModal();
+            document.getElementById('form-desc').value = '';
+        };
+
+        window.updateStatus = async (id, s) => { await updateDoc(doc(db, "incidents", id), { status: s }); };
+        window.deleteDocById = async (id) => { if(confirm("למחוק?")) await deleteDoc(doc(db, "incidents", id)); };
+
+        onSnapshot(query(colRef, orderBy("timestamp", "desc")), (snapshot) => {
+            const tbody = document.getElementById('incTableBody');
+            tbody.innerHTML = '';
+            snapshot.forEach(docSnap => {
+                const d = docSnap.data();
+                const id = docSnap.id;
+                tbody.innerHTML += `
+                    <tr class="hover:bg-gray-50 border-b border-gray-100 transition">
+                        <td class="p-4 text-xs font-mono text-blue-500">#${id.substring(0,6)}</td>
+                        <td class="p-4 font-semibold">${d.desc}</td>
+                        <td class="p-4"><span class="px-2 py-1 rounded text-[10px] font-bold ${d.priority.includes('P1') ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}">${d.priority}</span></td>
+                        <td class="p-4">
+                            <select onchange="updateStatus('${id}', this.value)" class="text-xs border rounded p-1">
+                                <option value="New" ${d.status === 'New' ? 'selected' : ''}>New</option>
+                                <option value="In Progress" ${d.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                                <option value="Resolved" ${d.status === 'Resolved' ? 'selected' : ''}>Resolved</option>
+                            </select>
+                        </td>
+                        <td class="p-4 text-center">
+                            <button onclick="deleteDocById('${id}')" class="text-gray-300 hover:text-red-500"><i class="fas fa-trash-alt"></i></button>
+                        </td>
+                    </tr>`;
+            });
+        });
+    </script>
+</body>
+</html>
