@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>ניהול קריאות שירות</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 flex h-screen">
+
+    <main class="flex-1 p-8 overflow-y-auto">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-2xl font-bold text-gray-800">קריאות שירות פתוחות</h1>
+            <div class="flex gap-2">
+                <span class="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full uppercase">סה"כ פעילות: <span id="totalTickets">0</span></span>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <table class="w-full text-right border-collapse">
+                <thead>
+                    <tr class="bg-gray-100 border-b border-gray-200">
+                        <th class="p-4 text-gray-600 font-semibold text-sm">תאריך</th>
+                        <th class="p-4 text-gray-600 font-semibold text-sm">נושא</th>
+                        <th class="p-4 text-gray-600 font-semibold text-sm">מחלקה</th>
+                        <th class="p-4 text-gray-600 font-semibold text-sm">משתמש</th>
+                        <th class="p-4 text-gray-600 font-semibold text-sm">סטטוס</th>
+                        <th class="p-4 text-gray-600 font-semibold text-sm text-center">פעולות</th>
+                    </tr>
+                </thead>
+                <tbody id="incidents-list">
+                    </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script type="module">
+        import { getFirestore, collection, onSnapshot, updateDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+
+        // Firebase Config (מבוסס על הנתונים שסיפקת)
+        const firebaseConfig = {
+            apiKey: "AIzaSyCkmi_WVVGk6PvIGoh8FEzXOyzzDN2jJqA",
+            authDomain: "itservice-ef2cb.firebaseapp.com",
+            projectId: "itservice-ef2cb",
+            storageBucket: "itservice-ef2cb.firebasestorage.app",
+            messagingSenderId: "585535831360",
+            appId: "1:585535831360:web:8b84f53b6892a2fc490ea5"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // פונקציה למשיכת קריאות בזמן אמת
+        onSnapshot(collection(db, "tickets"), (snapshot) => {
+            const list = document.getElementById('incidents-list');
+            list.innerHTML = '';
+            document.getElementById('totalTickets').innerText = snapshot.size;
+
+            snapshot.forEach((docSnap) => {
+                const ticket = docSnap.data();
+                const id = docSnap.id;
+                
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-gray-100 hover:bg-gray-50 transition";
+                tr.innerHTML = `
+                    <td class="p-4 text-sm text-gray-600">${ticket.timestamp?.toDate().toLocaleDateString('he-IL') || 'N/A'}</td>
+                    <td class="p-4 font-medium text-gray-800">${ticket.title}</td>
+                    <td class="p-4 text-sm text-gray-500">${ticket.department || 'כללי'}</td>
+                    <td class="p-4 text-sm text-gray-500">${ticket.userEmail}</td>
+                    <td class="p-4">
+                        <span class="px-2 py-1 rounded text-xs font-bold ${ticket.status === 'open' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}">
+                            ${ticket.status === 'open' ? 'פתוח' : 'סגור'}
+                        </span>
+                    </td>
+                    <td class="p-4 text-center">
+                        <button onclick="toggleStatus('${id}', '${ticket.status}')" class="text-blue-500 hover:text-blue-700 ml-3">
+                            <i class="fas fa-sync-alt"></i> שנה סטטוס
+                        </button>
+                    </td>
+                `;
+                list.appendChild(tr);
+            });
+        });
+
+        // פונקציה לעדכון סטטוס (תזדקק לחשיפה ל-window כדי לעבוד ב-onclick)
+        window.toggleStatus = async (id, currentStatus) => {
+            const newStatus = currentStatus === 'open' ? 'closed' : 'open';
+            await updateDoc(doc(db, "tickets", id), { status: newStatus });
+        };
+    </script>
+</body>
+</html>

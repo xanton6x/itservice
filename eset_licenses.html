@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>ניהול רישיונות ESET</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 flex h-screen">
+
+    <main class="flex-1 p-8 overflow-y-auto">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-2xl font-bold text-gray-800"><i class="fas fa-shield-alt text-blue-600 ml-2"></i>ניהול רישיונות ESET</h1>
+            <button onclick="document.getElementById('add-license-modal').classList.remove('hidden')" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                <i class="fas fa-plus ml-2"></i>הוסף רישיון חדש
+            </button>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <table class="w-full text-right border-collapse">
+                <thead>
+                    <tr class="bg-gray-100 border-b border-gray-200">
+                        <th class="p-4 text-gray-600 font-semibold text-sm">שם לקוח / עמדה</th>
+                        <th class="p-4 text-gray-600 font-semibold text-sm">מפתח רישיון</th>
+                        <th class="p-4 text-gray-600 font-semibold text-sm">תאריך תפוגה</th>
+                        <th class="p-4 text-gray-600 font-semibold text-sm">סטטוס</th>
+                        <th class="p-4 text-gray-600 font-semibold text-sm text-center">פעולות</th>
+                    </tr>
+                </thead>
+                <tbody id="license-list">
+                    </tbody>
+            </table>
+        </div>
+
+        <div id="add-license-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-lg p-6 w-full max-w-md">
+                <h2 class="text-xl font-bold mb-4">הוספת רישיון חדש</h2>
+                <input type="text" id="clientName" placeholder="שם הלקוח" class="w-full p-2 mb-3 border rounded">
+                <input type="text" id="licenseKey" placeholder="מפתח מוצר (XXXX-XXXX-XXXX)" class="w-full p-2 mb-3 border rounded">
+                <label class="block text-sm text-gray-600 mb-1">תאריך פקיעת תוקף:</label>
+                <input type="date" id="expiryDate" class="w-full p-2 mb-4 border rounded">
+                <div class="flex justify-end gap-2">
+                    <button onclick="document.getElementById('add-license-modal').classList.add('hidden')" class="px-4 py-2 text-gray-600">ביטול</button>
+                    <button id="saveLicenseBtn" class="px-4 py-2 bg-blue-600 text-white rounded">שמור רישיון</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { getFirestore, collection, onSnapshot, addDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCkmi_WVVGk6PvIGoh8FEzXOyzzDN2jJqA",
+            authDomain: "itservice-ef2cb.firebaseapp.com",
+            projectId: "itservice-ef2cb",
+            storageBucket: "itservice-ef2cb.firebasestorage.app",
+            messagingSenderId: "585535831360",
+            appId: "1:585535831360:web:8b84f53b6892a2fc490ea5"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // פונקציה לחישוב סטטוס וצבע
+        function getStatusDetails(dateStr) {
+            const expDate = new Date(dateStr);
+            const today = new Date();
+            const diffTime = expDate - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays < 0) return { label: 'פג תוקף', class: 'bg-red-100 text-red-700' };
+            if (diffDays <= 30) return { label: `פוקע בעוד ${diffDays} ימים`, class: 'bg-orange-100 text-orange-700' };
+            return { label: 'תקין', class: 'bg-green-100 text-green-700' };
+        }
+
+        // האזנה לנתונים
+        onSnapshot(collection(db, "licenses"), (snapshot) => {
+            const list = document.getElementById('license-list');
+            list.innerHTML = '';
+            snapshot.forEach((docSnap) => {
+                const data = docSnap.data();
+                const status = getStatusDetails(data.expiryDate);
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-gray-100 hover:bg-gray-50";
+                tr.innerHTML = `
+                    <td class="p-4 font-medium">${data.clientName}</td>
+                    <td class="p-4 font-mono text-sm text-gray-500">${data.licenseKey}</td>
+                    <td class="p-4 text-sm">${new Date(data.expiryDate).toLocaleDateString('he-IL')}</td>
+                    <td class="p-4"><span class="px-2 py-1 rounded-full text-xs font-bold ${status.class}">${status.label}</span></td>
+                    <td class="p-4 text-center">
+                        <button onclick="deleteLicense('${docSnap.id}')" class="text-red-400 hover:text-red-600"><i class="fas fa-trash-alt"></i></button>
+                    </td>
+                `;
+                list.appendChild(tr);
+            });
+        });
+
+        // שמירת רישיון חדש
+        document.getElementById('saveLicenseBtn').onclick = async () => {
+            const clientName = document.getElementById('clientName').value;
+            const licenseKey = document.getElementById('licenseKey').value;
+            const expiryDate = document.getElementById('expiryDate').value;
+
+            if (clientName && licenseKey && expiryDate) {
+                await addDoc(collection(db, "licenses"), { clientName, licenseKey, expiryDate });
+                document.getElementById('add-license-modal').classList.add('hidden');
+                alert("הרישיון התווסף בהצלחה");
+            }
+        };
+
+        window.deleteLicense = async (id) => {
+            if (confirm("האם למחוק את הרישיון?")) await deleteDoc(doc(db, "licenses", id));
+        };
+    </script>
+</body>
+</html>
