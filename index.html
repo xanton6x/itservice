@@ -367,6 +367,14 @@ onAuthStateChanged(auth, (user) => {
         window.location.href = "login.html";
     }
 });
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+const auth = getAuth(app);
+onAuthStateChanged(auth, (user) => {
+    if (!user) {
+        window.location.href = "login.html"; // אם לא מחובר, זרוק אותו ללוגין
+    }
+});
         
     </script>
 </body>
