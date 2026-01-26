@@ -3,163 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ESET Management | IT Control</title>
+    <title>ESET | IT Control</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;700&display=swap');
-        body { font-family: 'Assistant', sans-serif; }
-        .sidebar { width: 260px; min-width: 260px; transition: all 0.3s; }
-        @media (max-width: 768px) { .sidebar { position: fixed; right: -260px; z-index: 50; } .sidebar.active { right: 0; } }
+        @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700&display=swap');
+        body { font-family: 'Assistant', sans-serif; transition: 0.3s; }
+        .sidebar { width: 260px; min-width: 260px; background-color: #162122; flex-shrink: 0; }
+        .active-tab { background-color: #243435; color: white; border-right: 4px solid #22c55e; }
+        @media (max-width: 768px) {
+            .sidebar { position: fixed; right: -260px; height: 100%; z-index: 100; transition: 0.3s; }
+            .sidebar.active { right: 0; }
+        }
     </style>
 </head>
-<body class="bg-gray-100 dark:bg-slate-900 flex min-h-screen text-gray-800 dark:text-gray-100">
+<body class="bg-[#f8fafc] dark:bg-[#0d1314] flex min-h-screen text-slate-800 dark:text-slate-100">
 
-    <aside id="sidebar" class="sidebar bg-[#162122] flex flex-col text-[#a5b1b2] shadow-2xl">
-        <div class="p-6 text-white font-bold text-xl border-b border-gray-700 flex items-center gap-2"><i class="fas fa-microchip text-emerald-400"></i> IT CONTROL</div>
+    <aside id="sidebar" class="sidebar flex flex-col text-slate-400">
+        <div class="p-6 text-white font-bold text-xl border-b border-gray-800 flex items-center gap-2"><i class="fas fa-microchip text-emerald-400"></i> IT CONTROL</div>
         <nav class="flex-1 mt-4 space-y-1">
-            <a href="index.html" class="w-full text-right py-4 px-6 flex items-center gap-4 hover:bg-[#34494a] transition"><i class="fas fa-chart-line w-5"></i> דאשבורד</a>
-            <a href="incidents.html" class="w-full text-right py-4 px-6 flex items-center gap-4 hover:bg-[#34494a] transition"><i class="fas fa-ticket-alt w-5"></i> קריאות שירות</a>
-            <a href="eset_licenses.html" class="bg-[#34494a] text-white border-right-4 border-green-500 w-full text-right py-4 px-6 flex items-center gap-4 transition"><i class="fas fa-shield-alt w-5 text-emerald-400"></i> רישיונות ESET</a>
-            <a href="admin_users.html" class="w-full text-right py-4 px-6 flex items-center gap-4 hover:bg-[#34494a] transition"><i class="fas fa-users-cog w-5"></i> ניהול משתמשים</a>
+            <a href="index.html" class="w-full text-right py-4 px-6 flex items-center gap-4 hover:bg-[#243435] transition"><i class="fas fa-chart-line w-5"></i> דאשבורד</a>
+            <a href="incidents.html" class="w-full text-right py-4 px-6 flex items-center gap-4 hover:bg-[#243435] transition"><i class="fas fa-ticket-alt w-5"></i> קריאות שירות</a>
+            <a href="eset_licenses.html" class="active-tab w-full text-right py-4 px-6 flex items-center gap-4 transition"><i class="fas fa-shield-alt w-5"></i> רישיונות ESET</a>
+            <a href="admin_users.html" class="w-full text-right py-4 px-6 flex items-center gap-4 hover:bg-[#243435] transition"><i class="fas fa-users-cog w-5"></i> ניהול משתמשים</a>
         </nav>
-        <div class="p-4"><button onclick="logout()" class="w-full bg-red-500/10 text-red-400 py-2 rounded-xl font-bold flex items-center justify-center gap-2"><i class="fas fa-sign-out-alt"></i> התנתק</button></div>
+        <div class="p-4 border-t border-gray-800"><button onclick="logout()" class="w-full bg-red-500/10 text-red-400 py-2 rounded-xl font-bold flex items-center justify-center gap-2 text-sm"><i class="fas fa-sign-out-alt"></i> התנתק</button></div>
     </aside>
 
     <div class="flex-1 flex flex-col min-w-0">
-        <header class="md:hidden bg-slate-800 text-white p-4 flex justify-between items-center">
-            <span class="font-bold">ESET MANAGER</span>
-            <button onclick="document.getElementById('sidebar').classList.toggle('active')"><i class="fas fa-bars text-xl"></i></button>
-        </header>
-
-        <main class="p-6 md:p-10 space-y-8 overflow-y-auto">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <h1 class="text-3xl font-black">ניהול <span class="text-emerald-500">רישיונות ESET</span></h1>
-                <div class="flex gap-2 w-full md:w-auto">
-                    <button onclick="importRCCData()" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-xl font-bold text-xs">ייבוא RCC</button>
-                    <button onclick="generatePDF()" class="flex-1 bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold text-xs">ייצא PDF</button>
-                </div>
+        <header class="md:hidden bg-[#162122] text-white p-4 flex justify-between items-center"><button onclick="document.getElementById('sidebar').classList.toggle('active')"><i class="fas fa-bars text-xl"></i></button></header>
+        <main class="p-6 md:p-10 space-y-8">
+            <h1 class="text-3xl font-black">ניהול <span class="text-emerald-500">רישיונות ESET</span></h1>
+            
+            <div class="bg-white dark:bg-[#1a2526] p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm grid grid-cols-1 md:grid-cols-5 gap-3">
+                <input type="text" id="in-name" placeholder="לקוח" class="bg-slate-50 dark:bg-[#243435] p-3 rounded-xl outline-none border dark:border-[#3d4f50] text-sm">
+                <input type="text" id="in-key" placeholder="מפתח" class="bg-slate-50 dark:bg-[#243435] p-3 rounded-xl outline-none border dark:border-[#3d4f50] text-sm">
+                <input type="number" id="in-price" placeholder="₪ מחיר" class="bg-slate-50 dark:bg-[#243435] p-3 rounded-xl outline-none border dark:border-[#3d4f50] text-sm">
+                <input type="date" id="in-date" class="bg-slate-50 dark:bg-[#243435] p-3 rounded-xl outline-none border dark:border-[#3d4f50] text-sm">
+                <button onclick="saveToCloud()" class="bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition">שמור רישיון</button>
             </div>
 
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                    <p class="text-[10px] text-gray-400 uppercase font-bold">סה"כ</p>
-                    <p id="stat-total" class="text-2xl font-black">0</p>
-                </div>
-                <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border-r-4 border-red-500">
-                    <p class="text-[10px] text-red-500 uppercase font-bold">פג תוקף</p>
-                    <p id="stat-expired" class="text-2xl font-black text-red-600">0</p>
-                </div>
-                <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border-r-4 border-emerald-500">
-                    <p class="text-[10px] text-emerald-500 uppercase font-bold">שווי חידושים</p>
-                    <p id="stat-cost" class="text-2xl font-black">₪0</p>
-                </div>
-            </div>
-
-            <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-gray-200 dark:border-gray-700">
-                <div class="grid grid-cols-1 md:grid-cols-5 gap-3 italic">
-                    <input type="text" id="in-name" placeholder="שם לקוח" class="bg-gray-50 dark:bg-slate-700 p-3 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
-                    <input type="text" id="in-key" placeholder="מפתח" class="bg-gray-50 dark:bg-slate-700 p-3 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
-                    <input type="number" id="in-price" placeholder="מחיר" class="bg-gray-50 dark:bg-slate-700 p-3 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
-                    <input type="date" id="in-date" class="bg-gray-50 dark:bg-slate-700 p-3 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
-                    <button onclick="saveToCloud()" class="bg-slate-900 text-white font-bold rounded-xl hover:bg-black transition">שמור</button>
-                </div>
-            </div>
-
-            <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+            <div class="bg-white dark:bg-[#1a2526] rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xl overflow-hidden">
                 <div class="overflow-x-auto">
-                    <table class="w-full text-right text-sm" id="licenseTable">
-                        <thead class="bg-gray-50 dark:bg-slate-700 text-gray-400 font-bold uppercase">
-                            <tr>
-                                <th class="p-4">לקוח</th>
-                                <th class="p-4">מפתח</th>
-                                <th class="p-4 text-center">תוקף</th>
-                                <th class="p-4">ימים</th>
-                                <th class="p-4 text-center">סטטוס</th>
-                                <th class="p-4">פעולות</th>
-                            </tr>
+                    <table class="w-full text-right text-sm">
+                        <thead class="bg-slate-50 dark:bg-[#243435] text-slate-400 font-bold">
+                            <tr><th class="p-5">לקוח</th><th class="p-5">תוקף</th><th class="p-5">ימים</th><th class="p-5 text-center">פעולות</th></tr>
                         </thead>
-                        <tbody id="tableBody" class="divide-y divide-gray-100 dark:divide-gray-700"></tbody>
+                        <tbody id="tableBody" class="divide-y dark:divide-slate-800 italic"></tbody>
                     </table>
                 </div>
             </div>
         </main>
     </div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-        const firebaseConfig = { apiKey: "AIzaSyCkmi_WVVGk6PvIGoh8FEzXOyzzDN2jJqA", authDomain: "itservice-ef2cb.firebaseapp.com", projectId: "itservice-ef2cb", storageBucket: "itservice-ef2cb.firebasestorage.app", messagingSenderId: "585535831360", appId: "1:585535831360:web:8b84f53b6892a2fc490ea5" };
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        const colRef = collection(db, "eset_licenses");
-
-        onAuthStateChanged(auth, (user) => { if (!user) window.location.href = "login.html"; });
-
-        onSnapshot(query(colRef, orderBy("expiryDate", "asc")), (snapshot) => {
-            const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = '';
-            let stats = { total: 0, expired: 0, cost: 0 };
-            const now = new Date();
-
-            snapshot.forEach(docSnap => {
-                const data = docSnap.data();
-                const expDate = new Date(data.expiryDate);
-                const diffDays = Math.ceil((expDate - now) / (1000 * 60 * 60 * 24));
-                stats.total++; stats.cost += Number(data.price || 0);
-
-                let badge = "bg-emerald-100 text-emerald-700"; let status = "תקין";
-                if(diffDays < 0) { badge = "bg-red-100 text-red-700"; status = "פג תוקף"; stats.expired++; }
-                else if(diffDays <= 30) { badge = "bg-orange-100 text-orange-700"; status = "פג בקרוב"; }
-
-                tbody.innerHTML += `
-                    <tr class="hover:bg-gray-50 dark:hover:bg-slate-700 transition">
-                        <td class="p-4 font-bold">${data.name}</td>
-                        <td class="p-4 font-mono text-xs opacity-50">${data.key || '---'}</td>
-                        <td class="p-4 text-center">${data.expiryDate}</td>
-                        <td class="p-4 font-black ${diffDays < 0 ? 'text-red-500' : ''}">${diffDays}</td>
-                        <td class="p-4 text-center"><span class="px-2 py-1 rounded-full text-[9px] font-bold uppercase ${badge}">${status}</span></td>
-                        <td class="p-4 text-center"><button onclick="deleteLic('${docSnap.id}')" class="text-gray-300 hover:text-red-500"><i class="fas fa-trash-alt"></i></button></td>
-                    </tr>`;
-            });
-            document.getElementById('stat-total').innerText = stats.total;
-            document.getElementById('stat-expired').innerText = stats.expired;
-            document.getElementById('stat-cost').innerText = '₪' + stats.cost;
-        });
-
-        window.saveToCloud = async () => {
-            const name = document.getElementById('in-name').value;
-            const key = document.getElementById('in-key').value;
-            const price = document.getElementById('in-price').value;
-            const date = document.getElementById('in-date').value;
-            if(!name || !date) return alert("חובה שם ותאריך");
-            await addDoc(colRef, { name, key, price, expiryDate: date, timestamp: Date.now() });
-            document.querySelectorAll('input').forEach(i => i.value = '');
-        };
-
-        window.deleteLic = async (id) => { if(confirm("למחוק?")) await deleteDoc(doc(db, "eset_licenses", id)); };
-        
-        window.importRCCData = async () => {
-            const list = [{n: "RCC - NFR", d: "2026-10-06", k: "3BA-3DM-G9W"}, {n: "GARAGE MOZNA", d: "2026-06-22", k: "333-DBJ-9UW"}, {n: "Kognit", d: "2026-05-26", k: "3AH-97S-DGE"}];
-            if(!confirm("לייבא נתונים?")) return;
-            for(let i of list) await addDoc(colRef, {name: i.n, expiryDate: i.d, key: i.k, price: 0, timestamp: Date.now()});
-            alert("הושלם");
-        };
-
-        window.generatePDF = () => {
-            const { jsPDF } = window.jspdf;
-            const docPdf = new jsPDF();
-            docPdf.text("ESET Report", 14, 15);
-            docPdf.autoTable({ html: '#licenseTable', margin: { top: 25 } });
-            docPdf.save("eset-report.pdf");
-        };
-
-        window.logout = () => signOut(auth).then(() => window.location.href = "login.html");
-    </script>
-</body>
+    </body>
 </html>
