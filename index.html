@@ -46,17 +46,18 @@
         <aside class="sn-sidebar h-[calc(100vh-56px)] text-gray-400 py-6 overflow-y-auto shadow-inner">
             <div class="px-6 mb-4 text-[10px] uppercase font-bold text-gray-500 tracking-widest">Favorites</div>
             <nav class="space-y-1">
-                <button onclick="showModule('dashboard')" id="btn-dashboard" class="w-full text-right py-3 px-6 flex items-center gap-4 active-tab">
-                    <i class="fas fa-th-large w-4 text-center"></i> דאשבורד ניהולי
-                </button>
-                <button onclick="showModule('incidents')" id="btn-incidents" class="w-full text-right py-3 px-6 flex items-center gap-4 hover:bg-[#34494a] hover:text-white transition">
-                    <i class="fas fa-exclamation-circle w-4 text-center"></i> קריאות שירות (Incidents)
-                </button>
-                <button onclick="showModule('approvals')" id="btn-approvals" class="w-full text-right py-3 px-6 flex items-center gap-4 hover:bg-[#34494a] hover:text-white transition relative">
-                    <i class="fas fa-check-double w-4 text-center"></i> אישורי מנהלים
-                    <span id="approval-badge" class="hidden absolute left-4 top-3 bg-red-500 text-white text-[9px] px-1.5 rounded-full">!</span>
-                </button>
-            </nav>
+    <button onclick="showModule('dashboard')" id="btn-dashboard" class="w-full text-right py-3 px-6 flex items-center gap-4 active-tab">
+        <i class="fas fa-th-large w-4 text-center"></i> דאשבורד ניהולי
+    </button>
+    
+    <a href="eset_licenses.html" class="w-full text-right py-3 px-6 flex items-center gap-4 text-gray-400 hover:bg-[#34494a] hover:text-white transition">
+        <i class="fas fa-shield-alt w-4 text-center text-emerald-400"></i> ניהול רישיונות ESET
+    </a>
+
+    <button onclick="showModule('incidents')" id="btn-incidents" class="w-full text-right py-3 px-6 flex items-center gap-4 hover:bg-[#34494a] hover:text-white transition">
+        <i class="fas fa-exclamation-circle w-4 text-center"></i> קריאות שירות (Incidents)
+    </button>
+    </nav>
         </aside>
 
         <main class="flex-1 p-8 h-[calc(100vh-56px)] overflow-y-auto scroll-smooth">
