@@ -46,7 +46,7 @@
             </button>
 
             <div id="errorMsg" class="hidden text-red-400 text-center text-xs bg-red-400/10 p-3 rounded-lg border border-red-400/20">
-                פרטי ההתחברות שגויים. נסה שוב.
+                פרטי ההתחברות שגויים או שקיימת בעיית חיבור.
             </div>
         </div>
 
@@ -57,7 +57,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCkmi_WVVGk6PvIGoh8FEzXOyzzDN2jJqA",
@@ -71,23 +71,31 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
 
+        // בדיקה אם המשתמש כבר מחובר - אם כן, העברה אוטומטית
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                window.location.replace("index.html");
+            }
+        });
+
         window.login = async () => {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const btn = document.getElementById('loginBtn');
             const err = document.getElementById('errorMsg');
 
-            if(!email || !password) return;
+            if(!email || !password) {
+                alert("נא למלא אימייל וסיסמה");
+                return;
+            }
 
-            // שינוי כפתור למצב טעינה
             btn.innerHTML = '<i class="fas fa-spinner animate-spin"></i> מתחבר...';
             btn.disabled = true;
             err.classList.add('hidden');
 
             try {
                 await signInWithEmailAndPassword(auth, email, password);
-                // הצלחה - מעבר לדף הראשי
-                window.location.href = "index.html";
+                // ה-onAuthStateChanged למעלה יטפל בהעברה ל-index.html
             } catch (error) {
                 console.error(error);
                 err.classList.remove('hidden');
