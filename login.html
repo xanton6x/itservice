@@ -8,41 +8,47 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700&display=swap');
-        body { font-family: 'Assistant', sans-serif; background-color: #0d1314; color: white; }
-        .login-card { background-color: #1a2526; border-radius: 2.5rem; border: 1px solid #2d3a3b; }
-        .input-field { background-color: #243435; border: 1px solid #3d4f50; color: white; }
+        body { font-family: 'Assistant', sans-serif; background-color: #0d1314; color: white; margin: 0; height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .login-card { background-color: #1a2526; border-radius: 2.5rem; border: 1px solid #2d3a3b; width: 100%; max-width: 400px; padding: 2.5rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+        .input-field { background-color: #243435; border: 1px solid #3d4f50; color: white; width: 100%; padding: 1rem; border-radius: 1rem; outline: none; margin-top: 0.5rem; }
+        .input-field:focus { border-color: #10b981; ring: 2px; ring-color: #10b981; }
+        .btn-submit { background-color: #059669; color: white; font-weight: bold; width: 100%; padding: 1rem; border-radius: 1rem; margin-top: 1.5rem; transition: 0.3s; cursor: pointer; border: none; }
+        .btn-submit:hover { background-color: #047857; transform: translateY(-2px); }
+        .btn-submit:disabled { background-color: #064e3b; cursor: not-allowed; opacity: 0.7; }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-6">
+<body>
 
-    <div class="login-card max-w-md w-full p-10 shadow-2xl">
-        <div class="text-center mb-10">
-            <div class="inline-flex items-center justify-center w-20 h-20 bg-emerald-500 rounded-3xl mb-6 shadow-lg shadow-emerald-500/20">
-                <i class="fas fa-microchip text-white text-3xl"></i>
+    <div class="login-card">
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-emerald-500 rounded-2xl mb-4 shadow-lg shadow-emerald-500/20">
+                <i class="fas fa-microchip text-white text-2xl"></i>
             </div>
-            <h1 class="text-3xl font-black italic">IT CONTROL</h1>
+            <h1 class="text-2xl font-black">IT CONTROL</h1>
+            <p class="text-slate-500 text-xs font-bold uppercase mt-1">מערכת ניהול</p>
         </div>
 
-        <form id="loginForm" class="space-y-6">
-            <div>
-                <label class="text-xs font-bold text-slate-400 mr-2 uppercase tracking-widest">אימייל</label>
-                <input type="email" id="email" required class="input-field w-full px-5 py-4 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
+        <form id="loginForm">
+            <div class="mb-4">
+                <label class="text-xs font-bold text-slate-400 mr-2 uppercase">אימייל</label>
+                <input type="email" id="email" required class="input-field" placeholder="דואר אלקטרוני">
             </div>
-            <div>
-                <label class="text-xs font-bold text-slate-400 mr-2 uppercase tracking-widest">סיסמה</label>
-                <input type="password" id="password" required class="input-field w-full px-5 py-4 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
+            <div class="mb-2">
+                <label class="text-xs font-bold text-slate-400 mr-2 uppercase">סיסמה</label>
+                <input type="password" id="password" required class="input-field" placeholder="••••••••">
             </div>
-            <button type="submit" id="loginBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-emerald-600/20">
-                התחבר למערכת
-            </button>
+            <button type="submit" id="loginBtn" class="btn-submit">התחבר למערכת</button>
         </form>
-        <div id="errorMsg" class="hidden mt-6 p-4 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded-2xl text-center font-bold italic"></div>
+        
+        <div id="errorMsg" class="hidden mt-6 p-3 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded-xl text-center font-bold"></div>
     </div>
 
     <script type="module">
+        // ייבוא Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
+        // הגדרות הפרויקט שלך
         const firebaseConfig = { 
             apiKey: "AIzaSyCkmi_WVVGk6PvIGoh8FEzXOyzzDN2jJqA", 
             authDomain: "itservice-ef2cb.firebaseapp.com", 
@@ -52,13 +58,21 @@
             appId: "1:585535831360:web:8b84f53b6892a2fc490ea5" 
         };
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
+        // אתחול
+        let auth;
+        try {
+            const app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            console.log("Firebase initialized successfully");
+        } catch (e) {
+            console.error("Firebase initialization failed", e);
+            alert("שגיאה בטעינת Firebase. בדוק חיבור אינטרנט.");
+        }
 
-        // אם המשתמש כבר מחובר - תעביר אותו
+        // בדיקה אם המשתמש כבר מחובר
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                console.log("User already logged in:", user.email);
+                console.log("Logged in as:", user.email);
                 window.location.replace("index.html");
             }
         });
@@ -67,27 +81,35 @@
         const loginBtn = document.getElementById('loginBtn');
         const errorMsg = document.getElementById('errorMsg');
 
+        // פונקציית ההתחברות
         loginForm.onsubmit = async (e) => {
-            e.preventDefault();
+            e.preventDefault(); // קריטי למניעת ריענון הדף!
             
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
 
+            if (!email || !password) return;
+
             loginBtn.disabled = true;
-            loginBtn.innerText = "מעבד...";
+            loginBtn.innerText = "מתחבר...";
             errorMsg.classList.add('hidden');
 
             try {
                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                console.log("Logged in successfully!");
+                console.log("Success!");
                 window.location.replace("index.html");
             } catch (error) {
-                console.error("Login Error Details:", error.code, error.message);
+                console.error("Error code:", error.code);
                 errorMsg.classList.remove('hidden');
-                errorMsg.innerText = "שגיאה: " + error.code;
                 
-                // התראה קופצת כדי שנוכל לראות את השגיאה גם בנייד
-                alert("שגיאת התחברות: " + error.code);
+                // הודעה בעברית לפי סוג השגיאה
+                if (error.code === 'auth/invalid-credential') {
+                    errorMsg.innerText = "פרטי התחברות שגויים";
+                } else if (error.code === 'auth/too-many-requests') {
+                    errorMsg.innerText = "יותר מדי ניסיונות. נסה שוב מאוחר יותר";
+                } else {
+                    errorMsg.innerText = "שגיאה: " + error.code;
+                }
                 
                 loginBtn.disabled = false;
                 loginBtn.innerText = "התחבר למערכת";
