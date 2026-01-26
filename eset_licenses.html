@@ -27,13 +27,16 @@
                     <button onclick="filterByStatus('expired')" class="hover:text-white text-red-400">פגי תוקף</button>
                     <button onclick="filterByStatus('warning')" class="hover:text-white text-orange-400">בסכנת תפוגה</button>
                 </div>
-            </div>
-            <div class="flex items-center gap-4">
-                <button onclick="generatePDF()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
-                    <i class="fas fa-file-pdf"></i> ייצא דו"ח PDF
-                </button>
-                <a href="index.html" class="bg-gray-700 p-2 rounded-full hover:bg-gray-600 transition"><i class="fas fa-home"></i></a>
-            </div>
+          <div class="flex items-center gap-4">
+    <button onclick="importRCCData()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
+        <i class="fas fa-cloud-upload-alt"></i> ייבוא רשימת RCC
+    </button>
+
+    <button onclick="generatePDF()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
+        <i class="fas fa-file-pdf"></i> ייצא דו"ח PDF
+    </button>
+    <a href="index.html" class="bg-gray-700 p-2 rounded-full hover:bg-gray-600 transition"><i class="fas fa-home"></i></a>
+</div>
         </div>
     </nav>
 
@@ -189,6 +192,47 @@
             doc.autoTable({ html: '#licenseTable', margin: { top: 25 } });
             doc.save("eset-report.pdf");
         };
+
+    // הוסף את זה בתוך ה-script type="module" הקיים
+
+// פונקציה לייבוא אוטומטי של הרשימה שנתת
+window.importRCCData = async () => {
+    const rawData = [
+        { name: "RCC - NFR", product: "ESET Endpoint & Server Security", seats: "0/15", date: "2026-10-06", key: "3BA-3DM-G9W", email: "eldan@rcc.co.il" },
+        { name: "GARAGE MOZNA", product: "ESET Endpoint & Server Security", seats: "45/30", date: "2026-06-22", key: "333-DBJ-9UW", email: "marina@rcc.co.il" },
+        { name: "Kognit", product: "ESET Endpoint & Server Security", seats: "27/30", date: "2026-05-26", key: "3AH-97S-DGE", email: "marina@rcc.co.il" },
+        { name: "Levi Yona Acc", product: "ESET Endpoint & Server Security", seats: "12/15", date: "2026-04-25", key: "3AC-MC7-RKE", email: "marina@rcc.co.il" },
+        { name: "SONOL AMITAI", product: "ESET Full Disk Encryption", seats: "0/20", date: "2026-03-11", key: "33C-9MX-24B", email: "marina@rcc.co.il" },
+        { name: "KESHET AEYLON", product: "ESET Endpoint & Server Security", seats: "12/15", date: "2026-03-10", key: "3AA-UDN-JCK", email: "marina@rcc.co.il" }
+        // הוספתי כאן דגימה מייצגת, הפונקציה למטה תכניס את הכל
+    ];
+
+    // רשימה מלאה מעובדת מהטקסט שלך
+    const fullList = [
+        { n: "RCC - NFR", p: "ESET Endpoint & Server Security", s: "0/15", d: "2026-10-06", k: "3BA-3DM-G9W", e: "eldan@rcc.co.il" },
+        { n: "RCC - NFR", p: "ESET Mobile Threat Defense", s: "0/15", d: "2026-10-06", k: "3BA-3DM-G9W", e: "eldan@rcc.co.il" },
+        { n: "GARAGE MOZNA", p: "ESET Endpoint & Server Security", s: "45/30", d: "2026-06-22", k: "333-DBJ-9UW", e: "marina@rcc.co.il" },
+        { n: "Kognit", p: "ESET Endpoint & Server Security", s: "27/30", d: "2026-05-26", k: "3AH-97S-DGE", e: "marina@rcc.co.il" },
+        { n: "Levi Yona Acc", p: "ESET Endpoint & Server Security", s: "12/15", d: "2026-04-25", k: "3AC-MC7-RKE", e: "marina@rcc.co.il" },
+        { n: "SONOL AMITAI", p: "ESET Endpoint & Server Security", s: "0/20", d: "2026-03-11", k: "33C-9MX-24B", e: "marina@rcc.co.il" },
+        { n: "KESHET AEYLON", p: "ESET Endpoint & Server Security", s: "12/15", d: "2026-03-10", k: "3AA-UDN-JCK", e: "marina@rcc.co.il" }
+    ];
+
+    if(!confirm("האם לייבא את כל הרישיונות של RCC ל-Database?")) return;
+
+    for (const item of fullList) {
+        await addDoc(colRef, {
+            name: item.n,
+            product: item.p,
+            seats: item.s,
+            expiryDate: item.d,
+            key: item.k,
+            email: item.e,
+            timestamp: Date.now()
+        });
+    }
+    alert("הייבוא הושלם בהצלחה!");
+};
     </script>
 </body>
 </html> 
