@@ -3,124 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>כניסה למערכת | IT Control</title>
+    <title>Login | IT Control</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700&display=swap');
-        body { 
-            font-family: 'Assistant', sans-serif; 
-        }
-        /* תמיכה ב-Dark Mode */
+        body { font-family: 'Assistant', sans-serif; }
+        .login-card { background-color: white; border-radius: 2.5rem; }
         @media (prefers-color-scheme: dark) {
-            body { background-color: #0f172a; }
-            .login-card { background-color: #1e293b; border-color: #334155; }
-            .input-field { background-color: #334155; border-color: #475569; color: white; }
-            .text-main { color: #f1f5f9; }
-            .text-sub { color: #94a3b8; }
+            body { background-color: #0d1314; }
+            .login-card { background-color: #1a2526; border: 1px solid #2d3a3b; color: white; }
+            .input-field { background-color: #243435; border: 1px solid #3d4f50; color: white; }
         }
         @media (prefers-color-scheme: light) {
             body { background-color: #f1f5f9; }
-            .login-card { background-color: #ffffff; border-color: #e2e8f0; }
-            .input-field { background-color: #f8fafc; border-color: #e2e8f0; color: #1e293b; }
-            .text-main { color: #1e293b; }
-            .text-sub { color: #64748b; }
+            .input-field { background-color: #f8fafc; border: 1px solid #e2e8f0; }
         }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-6">
+<body class="min-h-screen flex items-center justify-center p-6 transition-all">
 
-    <div class="login-card max-w-md w-full p-10 rounded-3xl shadow-2xl border transition-all">
+    <div class="login-card max-w-md w-full p-12 shadow-2xl">
         <div class="text-center mb-10">
-            <div class="inline-flex items-center justify-center w-16 h-16 bg-emerald-500 rounded-2xl shadow-lg shadow-emerald-500/30 mb-4">
-                <i class="fas fa-microchip text-white text-2xl"></i>
+            <div class="inline-flex items-center justify-center w-20 h-20 bg-emerald-500 rounded-3xl shadow-lg shadow-emerald-500/30 mb-6 rotate-3">
+                <i class="fas fa-microchip text-white text-3xl"></i>
             </div>
-            <h1 class="text-2xl font-black text-main tracking-tight">IT CONTROL SYSTEM</h1>
-            <p class="text-sub text-sm mt-2">אנא הזן פרטים כדי להתחבר למערכת</p>
+            <h1 class="text-3xl font-black tracking-tighter">IT CONTROL</h1>
+            <p class="text-slate-500 dark:text-slate-400 text-sm mt-2 font-bold italic">מערכת ניהול תשתיות מרכזית</p>
         </div>
 
         <form id="loginForm" class="space-y-6">
-            <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-sub mb-2 mr-1">אימייל</label>
-                <div class="relative">
-                    <i class="fas fa-envelope absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                    <input type="email" id="email" required 
-                        class="input-field w-full pr-11 pl-4 py-3 rounded-xl outline-none border focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all text-sm" 
-                        placeholder="name@company.com">
-                </div>
+            <div class="space-y-2">
+                <label class="text-xs font-bold uppercase tracking-widest text-slate-400 mr-2">אימייל</label>
+                <input type="email" id="email" required class="input-field w-full px-5 py-4 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-sm" placeholder="your@email.com">
             </div>
-
-            <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-sub mb-2 mr-1">סיסמה</label>
-                <div class="relative">
-                    <i class="fas fa-lock absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                    <input type="password" id="password" required 
-                        class="input-field w-full pr-11 pl-4 py-3 rounded-xl outline-none border focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all text-sm" 
-                        placeholder="••••••••">
-                </div>
+            <div class="space-y-2">
+                <label class="text-xs font-bold uppercase tracking-widest text-slate-400 mr-2">סיסמה</label>
+                <input type="password" id="password" required class="input-field w-full px-5 py-4 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-sm" placeholder="••••••••">
             </div>
-
-            <button type="submit" id="loginBtn" 
-                class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-emerald-600/20 transition-all flex items-center justify-center gap-2">
-                <span>התחברות למערכת</span>
-                <i class="fas fa-arrow-left text-xs"></i>
+            <button type="submit" id="loginBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-2xl shadow-xl shadow-emerald-600/20 transition-all transform hover:-translate-y-1">
+                התחבר למערכת
             </button>
         </form>
 
-        <div id="errorMsg" class="hidden mt-6 p-4 bg-red-500/10 border border-red-500/20 text-red-500 text-xs rounded-xl text-center font-bold">
-            שגיאה: שם משתמש או סיסמה שגויים
-        </div>
+        <div id="errorMsg" class="hidden mt-6 p-4 bg-red-500/10 border border-red-500/20 text-red-500 text-xs rounded-2xl text-center font-bold italic"></div>
 
-        <div class="mt-10 text-center">
-            <p class="text-sub text-xs">RCC IT Solutions &copy; 2026</p>
-        </div>
+        <p class="mt-10 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest opacity-50">RCC IT SOLUTIONS &copy; 2026</p>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyCkmi_WVVGk6PvIGoh8FEzXOyzzDN2jJqA",
-            authDomain: "itservice-ef2cb.firebaseapp.com",
-            projectId: "itservice-ef2cb",
-            storageBucket: "itservice-ef2cb.firebasestorage.app",
-            messagingSenderId: "585535831360",
-            appId: "1:585535831360:web:8b84f53b6892a2fc490ea5"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-
-        // אם המשתמש כבר מחובר, שלח אותו ישר לדאשבורד
-        onAuthStateChanged(auth, (user) => {
-            if (user) window.location.href = "index.html";
-        });
-
-        const loginForm = document.getElementById('loginForm');
-        const errorMsg = document.getElementById('errorMsg');
-        const loginBtn = document.getElementById('loginBtn');
-
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-
-            loginBtn.disabled = true;
-            loginBtn.innerHTML = '<i class="fas fa-spinner animate-spin"></i> מאמת...';
-            errorMsg.classList.add('hidden');
-
-            try {
-                await signInWithEmailAndPassword(auth, email, password);
-                window.location.href = "index.html";
-            } catch (error) {
-                console.error(error);
-                errorMsg.innerText = "שגיאה: " + error.message;
-                errorMsg.classList.remove('hidden');
-                loginBtn.disabled = false;
-                loginBtn.innerHTML = '<span>התחברות למערכת</span><i class="fas fa-arrow-left text-xs"></i>';
-            }
-        });
-    </script>
-</body>
+    </body>
 </html>
