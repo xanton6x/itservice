@@ -20,20 +20,23 @@
         <div class="p-6 text-white font-bold text-xl border-b border-gray-700 flex items-center gap-2">
             <i class="fas fa-microchip text-green-400"></i> IT CONTROL
         </div>
-        <nav class="flex-1 mt-4 space-y-1">
-            <button onclick="showModule('dashboard')" id="btn-dashboard" class="w-full text-right py-3 px-6 flex items-center gap-4 active-tab transition">
-                <i class="fas fa-chart-line w-5"></i> דאשבורד
-            </button>
-            <button onclick="showModule('incidents')" id="btn-incidents" class="w-full text-right py-3 px-6 flex items-center gap-4 hover:bg-[#34494a] hover:text-white transition">
-                <i class="fas fa-ticket-alt w-5"></i> קריאות שירות
-            </button>
-            <a href="eset_licenses.html" class="w-full text-right py-3 px-6 flex items-center gap-4 hover:bg-[#34494a] hover:text-white transition">
-                <i class="fas fa-shield-alt w-5 text-emerald-400"></i> רישיונות ESET
-            </a>
-            <a href="admin_users.html" class="w-full text-right py-3 px-6 flex items-center gap-4 hover:bg-[#34494a] hover:text-white transition">
-                <i class="fas fa-users-cog w-5"></i> ניהול משתמשים
-            </a>
-        </nav>
+<nav class="flex-1 mt-4 space-y-1">
+    <a href="index.html" class="w-full text-right py-3 px-6 flex items-center gap-4 active-tab">
+        <i class="fas fa-chart-line w-5"></i> דאשבורד
+    </a>
+
+    <a href="incidents.html" class="w-full text-right py-3 px-6 flex items-center gap-4 text-gray-400 hover:bg-[#34494a] hover:text-white transition">
+        <i class="fas fa-ticket-alt w-5"></i> קריאות שירות
+    </a>
+
+    <a href="eset_licenses.html" class="w-full text-right py-3 px-6 flex items-center gap-4 text-gray-400 hover:bg-[#34494a] hover:text-white transition">
+        <i class="fas fa-shield-alt w-5 text-emerald-400"></i> רישיונות ESET
+    </a>
+
+    <a href="admin_users.html" class="w-full text-right py-3 px-6 flex items-center gap-4 text-gray-400 hover:bg-[#34494a] hover:text-white transition">
+        <i class="fas fa-users-cog w-5"></i> ניהול משתמשים
+    </a>
+</nav>
         <div class="p-4 border-t border-gray-700 text-xs">
             <div id="user-display-name" class="mb-2 text-gray-400 truncate">טוען משתמש...</div>
             <button onclick="logout()" class="text-red-400 hover:text-red-300 transition">
@@ -46,15 +49,26 @@
         
         <div id="mod-dashboard" class="module p-8">
             <h1 class="text-2xl font-bold mb-8">סקירה כללית</h1>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="bg-white p-6 rounded-xl shadow-sm border-r-4 border-blue-500">
-                    <p class="text-gray-400 text-xs font-bold uppercase">סה"כ קריאות</p>
-                    <h2 id="stat-total" class="text-3xl font-bold mt-2">0</h2>
-                </div>
-                <div class="bg-white p-6 rounded-xl shadow-sm border-r-4 border-red-500">
-                    <p class="text-red-500 text-xs font-bold uppercase">קריאות דחופות (P1)</p>
-                    <h2 id="stat-high" class="text-3xl font-bold mt-2 text-red-600">0</h2>
-                </div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    
+    <div onclick="window.location.href='incidents.html'" class="bg-white p-6 rounded-xl shadow-sm border-r-4 border-blue-500 cursor-pointer hover:bg-blue-50 transition">
+        <p class="text-gray-400 text-xs font-bold uppercase">סה"כ קריאות</p>
+        <h2 id="stat-total" class="text-3xl font-bold mt-2">0</h2>
+        <p class="text-[10px] text-blue-500 mt-2">לחץ לצפייה בכל הקריאות ←</p>
+    </div>
+
+    <div onclick="window.location.href='incidents.html'" class="bg-white p-6 rounded-xl shadow-sm border-r-4 border-red-500 cursor-pointer hover:bg-red-50 transition">
+        <p class="text-red-500 text-xs font-bold uppercase">קריאות דחופות (P1)</p>
+        <h2 id="stat-high" class="text-3xl font-bold mt-2 text-red-600">0</h2>
+        <p class="text-[10px] text-red-500 mt-2">לחץ לטיפול דחוף ←</p>
+    </div>
+
+    <div onclick="window.location.href='eset_licenses.html'" class="bg-white p-6 rounded-xl shadow-sm border-r-4 border-emerald-500 cursor-pointer hover:bg-emerald-50 transition">
+        <p class="text-emerald-600 text-xs font-bold uppercase">ESET - דורש חידוש</p>
+        <h2 id="dash-eset-alerts" class="text-3xl font-bold mt-2">0</h2>
+        <p class="text-[10px] text-emerald-600 mt-2">לחץ לניהול רישיונות ←</p>
+    </div>
+</div>
                 <div class="bg-white p-6 rounded-xl shadow-sm border-r-4 border-emerald-500 cursor-pointer hover:bg-gray-50 transition" onclick="window.location.href='eset_licenses.html'">
                     <p class="text-emerald-600 text-xs font-bold uppercase">ESET - דורש חידוש</p>
                     <h2 id="dash-eset-alerts" class="text-3xl font-
