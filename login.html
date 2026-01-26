@@ -8,81 +8,41 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700&display=swap');
-        body { font-family: 'Assistant', sans-serif; transition: 0.3s; }
-        
-        /* עיצוב אחיד התואם לשאר האתר */
-        .login-card { 
-            background-color: white; 
-            border-radius: 2.5rem; 
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
-        }
-
-        @media (prefers-color-scheme: dark) {
-            body { background-color: #0d1314; }
-            .login-card { 
-                background-color: #1a2526; 
-                border: 1px solid #2d3a3b; 
-                color: white; 
-            }
-            .input-field { 
-                background-color: #243435; 
-                border: 1px solid #3d4f50; 
-                color: white; 
-            }
-            .input-field::placeholder { color: #64748b; }
-        }
-
-        @media (prefers-color-scheme: light) {
-            body { background-color: #f1f5f9; }
-            .input-field { 
-                background-color: #f8fafc; 
-                border: 1px solid #e2e8f0; 
-            }
-        }
+        body { font-family: 'Assistant', sans-serif; background-color: #0d1314; color: white; }
+        .login-card { background-color: #1a2526; border-radius: 2.5rem; border: 1px solid #2d3a3b; }
+        .input-field { background-color: #243435; border: 1px solid #3d4f50; color: white; }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-6">
 
-    <div class="login-card max-w-md w-full p-10 md:p-12">
+    <div class="login-card max-w-md w-full p-10 shadow-2xl">
         <div class="text-center mb-10">
-            <div class="inline-flex items-center justify-center w-20 h-20 bg-emerald-500 rounded-3xl shadow-lg shadow-emerald-500/30 mb-6 transform rotate-3">
+            <div class="inline-flex items-center justify-center w-20 h-20 bg-emerald-500 rounded-3xl mb-6 shadow-lg shadow-emerald-500/20">
                 <i class="fas fa-microchip text-white text-3xl"></i>
             </div>
-            <h1 class="text-3xl font-black tracking-tighter">IT CONTROL</h1>
-            <p class="text-slate-500 dark:text-slate-400 text-sm mt-2 font-bold italic uppercase tracking-widest">מערכת ניהול תשתיות</p>
+            <h1 class="text-3xl font-black italic">IT CONTROL</h1>
         </div>
 
         <form id="loginForm" class="space-y-6">
-            <div class="space-y-2">
-                <label class="text-xs font-bold uppercase tracking-widest text-slate-400 mr-2">אימייל</label>
-                <input type="email" id="email" required 
-                       class="input-field w-full px-5 py-4 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-sm" 
-                       placeholder="name@company.com">
+            <div>
+                <label class="text-xs font-bold text-slate-400 mr-2 uppercase tracking-widest">אימייל</label>
+                <input type="email" id="email" required class="input-field w-full px-5 py-4 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
             </div>
-            
-            <div class="space-y-2">
-                <label class="text-xs font-bold uppercase tracking-widest text-slate-400 mr-2">סיסמה</label>
-                <input type="password" id="password" required 
-                       class="input-field w-full px-5 py-4 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-sm" 
-                       placeholder="••••••••">
+            <div>
+                <label class="text-xs font-bold text-slate-400 mr-2 uppercase tracking-widest">סיסמה</label>
+                <input type="password" id="password" required class="input-field w-full px-5 py-4 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
             </div>
-
-            <button type="submit" id="loginBtn" 
-                    class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-2xl shadow-xl shadow-emerald-600/20 transition-all transform active:scale-95">
+            <button type="submit" id="loginBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-emerald-600/20">
                 התחבר למערכת
             </button>
         </form>
-
-        <div id="errorMsg" class="hidden mt-6 p-4 bg-red-500/10 border border-red-500/20 text-red-500 text-xs rounded-2xl text-center font-bold italic"></div>
-
-        <p class="mt-10 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest opacity-40">RCC IT SOLUTIONS &copy; 2026</p>
+        <div id="errorMsg" class="hidden mt-6 p-4 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded-2xl text-center font-bold italic"></div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        // Configuration
         const firebaseConfig = { 
             apiKey: "AIzaSyCkmi_WVVGk6PvIGoh8FEzXOyzzDN2jJqA", 
             authDomain: "itservice-ef2cb.firebaseapp.com", 
@@ -95,57 +55,44 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
 
-        const loginForm = document.getElementById('loginForm');
-        const errorMsg = document.getElementById('errorMsg');
-        const loginBtn = document.getElementById('loginBtn');
-
-        // בדיקה אם המשתמש כבר מחובר - אם כן, העבר אותו ישר לדאשבורד
+        // אם המשתמש כבר מחובר - תעביר אותו
         onAuthStateChanged(auth, (user) => {
             if (user) {
+                console.log("User already logged in:", user.email);
                 window.location.replace("index.html");
             }
         });
 
-        // טיפול בהתחברות
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault(); // מונע את ריענון הדף שגרם לבעיה שלך
+        const loginForm = document.getElementById('loginForm');
+        const loginBtn = document.getElementById('loginBtn');
+        const errorMsg = document.getElementById('errorMsg');
 
-            const email = document.getElementById('email').value;
+        loginForm.onsubmit = async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
 
-            // עדכון ויזואלי של הכפתור
             loginBtn.disabled = true;
-            loginBtn.innerText = "בודק נתונים...";
+            loginBtn.innerText = "מעבד...";
             errorMsg.classList.add('hidden');
 
             try {
-                await signInWithEmailAndPassword(auth, email, password);
-                // הצלחה - ה-onAuthStateChanged כבר יטפל בהעברה
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                console.log("Logged in successfully!");
+                window.location.replace("index.html");
             } catch (error) {
-                console.error("Login Error:", error.code);
+                console.error("Login Error Details:", error.code, error.message);
                 errorMsg.classList.remove('hidden');
+                errorMsg.innerText = "שגיאה: " + error.code;
                 
-                // תרגום שגיאות לעברית
-                switch (error.code) {
-                    case 'auth/invalid-credential':
-                    case 'auth/wrong-password':
-                    case 'auth/user-not-found':
-                        errorMsg.innerText = "אימייל או סיסמה אינם נכונים";
-                        break;
-                    case 'auth/too-many-requests':
-                        errorMsg.innerText = "יותר מדי ניסיונות כושלים. החשבון ננעל זמנית";
-                        break;
-                    case 'auth/invalid-email':
-                        errorMsg.innerText = "כתובת אימייל לא תקינה";
-                        break;
-                    default:
-                        errorMsg.innerText = "שגיאה במערכת ההתחברות. נסה שוב";
-                }
+                // התראה קופצת כדי שנוכל לראות את השגיאה גם בנייד
+                alert("שגיאת התחברות: " + error.code);
                 
                 loginBtn.disabled = false;
                 loginBtn.innerText = "התחבר למערכת";
             }
-        });
+        };
     </script>
 </body>
 </html>
