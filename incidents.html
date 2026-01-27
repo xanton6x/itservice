@@ -126,13 +126,26 @@
 
         function updateFiltersUI() {
             const techFilter = document.getElementById('techFilter');
+            if(!techFilter) return;
             techsList.forEach(tech => {
                 const opt = document.createElement('option'); opt.value = tech.email; opt.textContent = tech.name;
                 techFilter.appendChild(opt);
             });
         }
 
-        window.changeStatusTab = (type) => { currentStatusTab = type; loadTickets(); };
+        window.changeStatusTab = (type) => { 
+            currentStatusTab = type; 
+            const btnOpen = document.getElementById('btnOpen');
+            const btnClosed = document.getElementById('btnClosed');
+            if(type === 'open') {
+                btnOpen.className = "px-4 py-2 text-sm font-medium bg-blue-600 text-white border border-blue-600 rounded-r-lg";
+                btnClosed.className = "px-4 py-2 text-sm font-medium bg-white text-gray-700 border border-gray-200 rounded-l-lg hover:bg-gray-50";
+            } else {
+                btnClosed.className = "px-4 py-2 text-sm font-medium bg-blue-600 text-white border border-blue-600 rounded-l-lg";
+                btnOpen.className = "px-4 py-2 text-sm font-medium bg-white text-gray-700 border border-gray-200 rounded-r-lg hover:bg-gray-50";
+            }
+            loadTickets(); 
+        };
 
         async function loadTickets() {
             if (!auth.currentUser) return;
@@ -143,6 +156,7 @@
             onSnapshot(q, (snapshot) => {
                 allTickets = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 applyFilters();
+                // עדכון המודאל רק אם הוא פתוח ובאמת יש מזהה פעיל
                 if(window.activeTicketId) updateModalUI();
             });
         }
@@ -154,7 +168,7 @@
             const filtered = allTickets.filter(t => {
                 const incNum = `INC-${t.ticketNumber || t.id.slice(-4)}`.toLowerCase();
                 const phone = String(t.clientPhone || "");
-                return (!search || t.clientName?.toLowerCase().includes(search) || phone.includes(search) || incNum.includes(search)) &&
+                return (!search || (t.clientName && t.clientName.toLowerCase().includes(search)) || phone.includes(search) || incNum.includes(search)) &&
                        (tech === 'all' || t.assignedTo === tech) &&
                        (priority === 'all' || t.priority === priority);
             });
@@ -171,7 +185,7 @@
                         <div class="flex-1" onclick="openTicket('${t.id}')">
                             <div class="flex items-center gap-2 mb-1">
                                 <span class="bg-slate-100 text-[10px] font-bold px-1.5 py-0.5 rounded border">INC-${t.ticketNumber || t.id.slice(-4)}</span>
-                                <span class="text-xs font-bold text-gray-700">${t.clientName}</span>
+                                <span class="text-xs font-bold text-gray-700">${t.clientName || 'לקוח לא ידוע'}</span>
                                 <span class="text-[10px] text-blue-500 font-bold"><i class="fas fa-phone-alt ml-1"></i>${t.clientPhone || '---'}</span>
                             </div>
                             <h3 class="font-bold text-slate-800">${t.title}</h3>
@@ -189,6 +203,7 @@
         }
 
         window.quickClose = async (id) => {
+            event.stopPropagation(); // מניעת פתיחת המודאל
             if(!confirm("סגירת קריאה כ'הושלם'?")) return;
             try {
                 await updateDoc(doc(db, "tickets", id), { 
@@ -206,11 +221,13 @@
         };
 
         window.updateModalUI = () => {
+            if(!window.activeTicketId) return;
             const t = allTickets.find(ticket => ticket.id === window.activeTicketId);
             if(!t) return;
+            
             document.getElementById('modalIncNumber').innerText = `INC-${t.ticketNumber || t.id.slice(-4)}`;
             document.getElementById('modalTitle').innerText = t.title;
-            document.getElementById('modalClientName').innerText = t.clientName;
+            document.getElementById('modalClientName').innerText = t.clientName || '';
             const phoneEl = document.getElementById('modalClientPhone');
             phoneEl.innerText = t.clientPhone || 'לא הוזן';
             phoneEl.href = t.clientPhone ? `tel:${t.clientPhone}` : '#';
@@ -231,7 +248,7 @@
             } else { timeline.innerHTML = '<p class="text-xs text-gray-400 italic">אין עדכונים.</p>'; }
         };
 
-        // הפונקציה המתוקנת למניעת תקיעה
+        // התיקון הסופי למניעת קפיאה
         window.saveAllChanges = async () => {
             if (!window.activeTicketId) return;
             
@@ -239,11 +256,14 @@
             const commentInput = document.getElementById('newComment');
             const commentText = commentInput.value.trim();
             
+            if (btn.disabled) return;
+
             btn.disabled = true; 
             btn.innerText = 'שומר...';
 
             try {
-                const ticketRef = doc(db, "tickets", window.activeTicketId);
+                const currentId = window.activeTicketId;
+                const ticketRef = doc(db, "tickets", currentId);
                 const updateData = {
                     status: document.getElementById('modalStatusSelect').value,
                     assignedTo: document.getElementById('modalTechSelect').value,
@@ -259,23 +279,26 @@
                 }
 
                 await updateDoc(ticketRef, updateData);
+                
+                // התיקון הקריטי: מאפסים את המזהה וסוגרים מיד
                 commentInput.value = '';
-                closeModal(); 
+                closeModal();
+
             } catch (e) {
                 console.error("Save Error:", e);
-                if (e.message.toLowerCase().includes('block') || e.code === 'unavailable') {
-                    alert("נראה שתוסף בדפדפן (כמו AdBlock) חוסם את השמירה. נסה לכבות אותו עבור אתר זה.");
-                } else {
-                    alert("שגיאה בשמירה: " + e.message);
-                }
+                alert("שגיאה בשמירה: " + e.message);
             } finally {
-                // שחרור הכפתור בכל מצב (גם אם נכשל)
                 btn.disabled = false;
                 btn.innerText = 'עדכן וסגור חלון';
             }
         };
 
-        window.closeModal = () => { document.getElementById('ticketModal').classList.add('hidden'); document.body.classList.remove('modal-active'); window.activeTicketId = null; };
+        window.closeModal = () => { 
+            document.getElementById('ticketModal').classList.add('hidden'); 
+            document.body.classList.remove('modal-active'); 
+            window.activeTicketId = null; // מונע עדכוני UI כפולים
+        };
+
         auth.onAuthStateChanged(user => { if(user) loadTickets(); });
     </script>
 </body>
