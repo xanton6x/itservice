@@ -6,63 +6,22 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        .modal-active {
-            overflow: hidden;
+        .modal-active { overflow: hidden; }
+        .timeline-item { position: relative; border-right: 2px solid #e2e8f0; padding-right: 1.5rem; margin-bottom: 1rem; }
+        .timeline-item::before { 
+            content: ''; position: absolute; right: -6px; top: 5px; 
+            width: 10px; height: 10px; background: #3b82f6; border-radius: 50%; 
         }
-
-        .timeline-item {
-            position: relative;
-            border-right: 2px solid #e2e8f0;
-            padding-right: 1.5rem;
-            margin-bottom: 1rem;
-        }
-
-            .timeline-item::before {
-                content: '';
-                position: absolute;
-                right: -6px;
-                top: 5px;
-                width: 10px;
-                height: 10px;
-                background: #3b82f6;
-                border-radius: 50%;
-            }
-
-        .priority-low {
-            border-right-color: #10b981 !important;
-        }
-
-        .priority-medium {
-            border-right-color: #f59e0b !important;
-        }
-
-        .priority-high {
-            border-right-color: #ef4444 !important;
-        }
-
-        .priority-critical {
-            border-right-color: #7f1d1d !important;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.7;
-            }
-
-            100% {
-                opacity: 1;
-            }
-        }
+        .priority-low { border-right-color: #10b981 !important; }
+        .priority-medium { border-right-color: #f59e0b !important; }
+        .priority-high { border-right-color: #ef4444 !important; }
+        .priority-critical { border-right-color: #7f1d1d !important; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
     </style>
 </head>
 <body class="bg-gray-100">
     <div class="max-w-6xl mx-auto p-6">
-
+        
         <div class="flex flex-col md:flex-row justify-between items-center mb-6">
             <h1 class="text-2xl font-bold text-slate-800">ניהול קריאות שירות</h1>
             <div class="inline-flex rounded-md shadow-sm mt-4 md:mt-0">
@@ -101,7 +60,7 @@
                 </div>
                 <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
             </div>
-
+            
             <div class="p-6 overflow-y-auto flex-1">
                 <div class="flex flex-wrap gap-4 mb-6 p-4 bg-gray-50 rounded-lg border border-gray-100 items-center justify-between">
                     <div class="flex gap-4">
@@ -118,9 +77,9 @@
                 </div>
 
                 <div class="grid grid-cols-3 gap-3 mb-6 bg-blue-50 p-4 rounded-lg">
-                    <div><label class="block text-[9px] font-bold text-blue-400 uppercase">סטטוס</label><select id="modalStatusSelect" class="w-full mt-1 border rounded p-1 text-sm bg-white outline-none"></select></div>
-                    <div><label class="block text-[9px] font-bold text-blue-400 uppercase">טכנאי</label><select id="modalTechSelect" class="w-full mt-1 border rounded p-1 text-sm bg-white outline-none"></select></div>
-                    <div><label class="block text-[9px] font-bold text-blue-400 uppercase">דחיפות</label><select id="modalPrioritySelect" class="w-full mt-1 border rounded p-1 text-sm bg-white outline-none"></select></div>
+                    <div><label class="block text-[9px] font-bold text-blue-400 uppercase">סטטוס</label><select id="modalStatusSelect" class="w-full mt-1 border rounded p-1 text-sm bg-white"></select></div>
+                    <div><label class="block text-[9px] font-bold text-blue-400 uppercase">טכנאי</label><select id="modalTechSelect" class="w-full mt-1 border rounded p-1 text-sm bg-white"></select></div>
+                    <div><label class="block text-[9px] font-bold text-blue-400 uppercase">דחיפות</label><select id="modalPrioritySelect" class="w-full mt-1 border rounded p-1 text-sm bg-white"></select></div>
                 </div>
 
                 <div class="mb-6">
@@ -133,7 +92,7 @@
             </div>
 
             <div class="p-4 border-t bg-gray-50">
-                <textarea id="newComment" placeholder="מה בוצע בקריאה?" class="w-full p-2 border rounded-lg text-sm h-20 mb-2 focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
+                <textarea id="newComment" placeholder="רשום הערת טיפול..." class="w-full p-2 border rounded-lg text-sm h-20 mb-2 focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
                 <button id="btnFullUpdate" onclick="saveAllChanges()" class="bg-blue-600 text-white w-full py-3 rounded-lg font-bold hover:bg-blue-700 shadow-lg transition">עדכן וסגור חלון</button>
             </div>
         </div>
@@ -146,21 +105,23 @@
         injectNavbar();
         window.activeTicketId = null;
         let currentStatusTab = 'open';
-        let techsList = [];
+        let techsList = []; 
         let allTickets = [];
 
         const priorityMap = { 'קריטי': 'priority-critical', 'גבוהה': 'priority-high', 'בינונית': 'priority-medium', 'נמוכה': 'priority-low' };
 
         async function fetchTechs() {
-            const usersSnap = await getDocs(collection(db, "users"));
-            techsList = [];
-            usersSnap.forEach(uDoc => {
-                const uData = uDoc.data();
-                if (uData.role === 'tech' || uData.role === 'admin' || uData.email === ADMIN_PRIMARY) {
-                    techsList.push({ email: uData.email, name: uData.name || uData.email });
-                }
-            });
-            updateFiltersUI();
+            try {
+                const usersSnap = await getDocs(collection(db, "users"));
+                techsList = [];
+                usersSnap.forEach(uDoc => {
+                    const uData = uDoc.data();
+                    if (uData.role === 'tech' || uData.role === 'admin' || uData.email === ADMIN_PRIMARY) {
+                        techsList.push({ email: uData.email, name: uData.name || uData.email });
+                    }
+                });
+                updateFiltersUI();
+            } catch(e) { console.error("Error fetching techs:", e); }
         }
 
         function updateFiltersUI() {
@@ -182,7 +143,7 @@
             onSnapshot(q, (snapshot) => {
                 allTickets = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 applyFilters();
-                if (window.activeTicketId) updateModalUI();
+                if(window.activeTicketId) updateModalUI();
             });
         }
 
@@ -194,8 +155,8 @@
                 const incNum = `INC-${t.ticketNumber || t.id.slice(-4)}`.toLowerCase();
                 const phone = String(t.clientPhone || "");
                 return (!search || t.clientName?.toLowerCase().includes(search) || phone.includes(search) || incNum.includes(search)) &&
-                    (tech === 'all' || t.assignedTo === tech) &&
-                    (priority === 'all' || t.priority === priority);
+                       (tech === 'all' || t.assignedTo === tech) &&
+                       (priority === 'all' || t.priority === priority);
             });
             renderTickets(filtered);
         };
@@ -205,40 +166,36 @@
             container.innerHTML = '';
             tickets.forEach(t => {
                 const pClass = priorityMap[t.priority] || 'border-gray-300';
-                const phoneDisplay = t.clientPhone || "אין מספר";
                 container.innerHTML += `
-                        <div class="bg-white p-4 rounded-lg shadow-sm border-r-4 ${pClass} hover:shadow-md transition cursor-pointer flex justify-between items-center relative group">
-                            <div class="flex-1" onclick="openTicket('${t.id}')">
-                                <div class="flex items-center gap-2 mb-1">
-                                    <span class="bg-slate-100 text-[10px] font-bold px-1.5 py-0.5 rounded border">INC-${t.ticketNumber || t.id.slice(-4)}</span>
-                                    <span class="text-xs font-bold text-gray-700">${t.clientName}</span>
-                                    <span class="text-[10px] text-blue-500 font-bold"><i class="fas fa-phone-alt ml-1"></i>${phoneDisplay}</span>
-                                </div>
-                                <h3 class="font-bold text-slate-800">${t.title}</h3>
-                                <div class="text-[10px] mt-1 text-gray-400 uppercase">
-                                    <span class="font-bold text-blue-600">${t.status}</span> | <span>${t.assignedTo || 'ללא שיוך'}</span>
-                                </div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm border-r-4 ${pClass} hover:shadow-md transition cursor-pointer flex justify-between items-center group">
+                        <div class="flex-1" onclick="openTicket('${t.id}')">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="bg-slate-100 text-[10px] font-bold px-1.5 py-0.5 rounded border">INC-${t.ticketNumber || t.id.slice(-4)}</span>
+                                <span class="text-xs font-bold text-gray-700">${t.clientName}</span>
+                                <span class="text-[10px] text-blue-500 font-bold"><i class="fas fa-phone-alt ml-1"></i>${t.clientPhone || '---'}</span>
                             </div>
-                            <div class="flex items-center gap-3">
-                                <div class="text-[10px] font-bold ${t.priority === 'קריטי' ? 'text-red-600' : 'text-gray-400'}">${t.priority || 'נמוכה'}</div>
-                                ${t.status !== 'הושלם' ? `
-                                    <button onclick="quickClose('${t.id}')" title="סגור קריאה מהר" class="bg-green-50 text-green-600 p-2 rounded-full hover:bg-green-600 hover:text-white transition opacity-0 group-hover:opacity-100">
-                                        <i class="fas fa-check"></i>
-                                    </button>
-                                ` : ''}
+                            <h3 class="font-bold text-slate-800">${t.title}</h3>
+                            <div class="text-[10px] mt-1 text-gray-400 uppercase">
+                                <span class="font-bold text-blue-600">${t.status}</span> | <span>${t.assignedTo || 'ללא שיוך'}</span>
                             </div>
-                        </div>`;
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <button onclick="quickClose('${t.id}')" title="סגירה מהירה" class="bg-green-50 text-green-600 p-2 rounded-full hover:bg-green-600 hover:text-white transition opacity-0 group-hover:opacity-100">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        </div>
+                    </div>`;
             });
         }
 
         window.quickClose = async (id) => {
-            if (!confirm("האם לסגור את הקריאה כ'הושלם'?")) return;
+            if(!confirm("סגירת קריאה כ'הושלם'?")) return;
             try {
-                await updateDoc(doc(db, "tickets", id), {
+                await updateDoc(doc(db, "tickets", id), { 
                     status: "הושלם",
-                    comments: arrayUnion({ text: "נסגר בשימוש מהיר מהרשימה", userName: auth.currentUser.email, date: new Date().toISOString() })
+                    comments: arrayUnion({ text: "נסגר בסגירה מהירה", userName: auth.currentUser.email, date: new Date().toISOString() })
                 });
-            } catch (e) { alert("שגיאה בסגירה: " + e.message); }
+            } catch (e) { alert("שגיאה: " + e.message); }
         };
 
         window.openTicket = (id) => {
@@ -250,12 +207,13 @@
 
         window.updateModalUI = () => {
             const t = allTickets.find(ticket => ticket.id === window.activeTicketId);
-            if (!t) return;
+            if(!t) return;
             document.getElementById('modalIncNumber').innerText = `INC-${t.ticketNumber || t.id.slice(-4)}`;
             document.getElementById('modalTitle').innerText = t.title;
             document.getElementById('modalClientName').innerText = t.clientName;
-            document.getElementById('modalClientPhone').innerText = t.clientPhone || 'לא הוזן מספר';
-            document.getElementById('modalClientPhone').href = t.clientPhone ? `tel:${t.clientPhone}` : '#';
+            const phoneEl = document.getElementById('modalClientPhone');
+            phoneEl.innerText = t.clientPhone || 'לא הוזן';
+            phoneEl.href = t.clientPhone ? `tel:${t.clientPhone}` : '#';
             document.getElementById('modalDescription').innerText = t.description;
 
             const badge = document.getElementById('modalPriorityBadge');
@@ -273,26 +231,52 @@
             } else { timeline.innerHTML = '<p class="text-xs text-gray-400 italic">אין עדכונים.</p>'; }
         };
 
+        // הפונקציה המתוקנת למניעת תקיעה
         window.saveAllChanges = async () => {
             if (!window.activeTicketId) return;
+            
             const btn = document.getElementById('btnFullUpdate');
-            btn.disabled = true; btn.innerText = 'שומר...';
+            const commentInput = document.getElementById('newComment');
+            const commentText = commentInput.value.trim();
+            
+            btn.disabled = true; 
+            btn.innerText = 'שומר...';
+
             try {
+                const ticketRef = doc(db, "tickets", window.activeTicketId);
                 const updateData = {
                     status: document.getElementById('modalStatusSelect').value,
                     assignedTo: document.getElementById('modalTechSelect').value,
                     priority: document.getElementById('modalPrioritySelect').value
                 };
-                const comment = document.getElementById('newComment').value.trim();
-                if (comment) { updateData.comments = arrayUnion({ text: comment, userName: auth.currentUser.email, date: new Date().toISOString() }); }
-                await updateDoc(doc(db, "tickets", window.activeTicketId), updateData);
-                document.getElementById('newComment').value = '';
-                closeModal();
-            } catch (e) { alert(e.message); btn.disabled = false; btn.innerText = 'עדכן וסגור'; }
+
+                if (commentText) {
+                    updateData.comments = arrayUnion({ 
+                        text: commentText, 
+                        userName: auth.currentUser.email, 
+                        date: new Date().toISOString() 
+                    });
+                }
+
+                await updateDoc(ticketRef, updateData);
+                commentInput.value = '';
+                closeModal(); 
+            } catch (e) {
+                console.error("Save Error:", e);
+                if (e.message.toLowerCase().includes('block') || e.code === 'unavailable') {
+                    alert("נראה שתוסף בדפדפן (כמו AdBlock) חוסם את השמירה. נסה לכבות אותו עבור אתר זה.");
+                } else {
+                    alert("שגיאה בשמירה: " + e.message);
+                }
+            } finally {
+                // שחרור הכפתור בכל מצב (גם אם נכשל)
+                btn.disabled = false;
+                btn.innerText = 'עדכן וסגור חלון';
+            }
         };
 
         window.closeModal = () => { document.getElementById('ticketModal').classList.add('hidden'); document.body.classList.remove('modal-active'); window.activeTicketId = null; };
-        auth.onAuthStateChanged(user => { if (user) loadTickets(); });
+        auth.onAuthStateChanged(user => { if(user) loadTickets(); });
     </script>
 </body>
 </html>
