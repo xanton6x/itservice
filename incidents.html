@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ניהול קריאות - מערכת IT</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -16,6 +17,19 @@
         .priority-medium { border-right: 4px solid #f59e0b; }
         .priority-high { border-right: 4px solid #ef4444; }
         .priority-critical { border-right: 4px solid #7f1d1d; animation: pulse 2s infinite; }
+        
+        /* עיצוב חריגת SLA */
+        .sla-overdue { 
+            background-color: #fef2f2 !important; 
+            border: 2px solid #ef4444 !important;
+            animation: border-pulse 2s infinite !important;
+        }
+        @keyframes border-pulse {
+            0% { border-color: #ef4444; }
+            50% { border-color: #fee2e2; }
+            100% { border-color: #ef4444; }
+        }
+
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } }
         
         #toast {
@@ -33,11 +47,11 @@
     <div id="toast">הפעולה בוצעה בהצלחה</div>
 
     <div class="max-w-6xl mx-auto p-6">
-        <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
             <h1 class="text-2xl font-bold text-slate-800">ניהול קריאות שירות</h1>
-            <div class="flex gap-2 mt-4 md:mt-0">
+            <div class="flex flex-wrap gap-2 justify-center">
                 <button onclick="openNewTicketModal()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-700 transition shadow-md">
-                    <i class="fas fa-plus-circle ml-1"></i> קריאה חדשה
+                    <i class="fas fa-plus-circle ml-1"></i> חדשה
                 </button>
                 <button onclick="exportToExcel()" class="bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-bold hover:bg-green-700 transition">
                     <i class="fas fa-file-excel ml-1"></i> ייצוא
@@ -80,7 +94,7 @@
                     <option value="גבוהה">גבוהה</option>
                     <option value="קריטי">קריטי</option>
                 </select>
-                <button onclick="createNewTicket()" id="btnCreateTicket" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold">צור קריאה</button>
+                <button onclick="createNewTicket()" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold">צור קריאה</button>
             </div>
         </div>
     </div>
@@ -95,12 +109,11 @@
                 <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
             </div>
             <div class="p-6 overflow-y-auto flex-1">
-                <div id="timeInfo" class="hidden flex justify-between bg-yellow-50 p-2 rounded-lg border border-yellow-100 mb-4 text-[11px] font-bold text-yellow-700">
-                    <span id="timeStarted">התחלה: -</span>
-                    <span id="timeEnded">סיום: -</span>
-                    <span id="duration">זמן עבודה: -</span>
+                <div id="timeInfo" class="hidden flex justify-between bg-yellow-50 p-2 rounded-lg border border-yellow-100 mb-4 text-[10px] font-bold text-yellow-700">
+                    <span id="timeStarted"></span>
+                    <span id="timeEnded"></span>
+                    <span id="duration"></span>
                 </div>
-
                 <div class="flex flex-wrap gap-4 mb-6 p-4 bg-gray-50 rounded-lg border items-center justify-between">
                     <div class="flex gap-4">
                         <span id="modalClientName" class="font-bold text-slate-700"></span>
@@ -128,7 +141,7 @@
 
     <script type="module">
         import { auth, db, injectNavbar, ADMIN_PRIMARY } from './js/app.js';
-        import { collection, query, where, onSnapshot, doc, updateDoc, deleteDoc, orderBy, getDocs, arrayUnion, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { collection, query, where, onSnapshot, doc, updateDoc, deleteDoc, orderBy, getDocs, arrayUnion, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         injectNavbar();
         window.activeTicketId = null;
@@ -136,6 +149,17 @@
         let techsList = []; 
         let allTickets = [];
         const priorityMap = { 'קריטי': 'priority-critical', 'גבוהה': 'priority-high', 'בינונית': 'priority-medium', 'נמוכה': 'priority-low' };
+
+        // הגדרת SLA בשעות
+        const SLA_HOURS = { 'קריטי': 2, 'גבוהה': 8, 'בינונית': 24, 'נמוכה': 48 };
+
+        function checkSLA(createdAt, priority, status) {
+            if (status === 'הושלם' || status === 'מבוטל') return { overdue: false, message: 'הושלם' };
+            const limit = SLA_HOURS[priority] || 24;
+            const diffHours = (new Date() - new Date(createdAt)) / (1000 * 60 * 60);
+            if (diffHours > limit) return { overdue: true, message: `חריגה! (${Math.floor(diffHours - limit)} שע')` };
+            return { overdue: false, message: `נותרו ${Math.round(limit - diffHours)} שע'` };
+        }
 
         async function fetchTechs() {
             const usersSnap = await getDocs(collection(db, "users"));
@@ -146,8 +170,8 @@
                     techsList.push({ email: uData.email, name: uData.name || uData.email });
                 }
             });
-            const techFilter = document.getElementById('techFilter');
-            techsList.forEach(t => techFilter.innerHTML += `<option value="${t.email}">${t.name}</option>`);
+            const filter = document.getElementById('techFilter');
+            techsList.forEach(t => filter.innerHTML += `<option value="${t.email}">${t.name}</option>`);
         }
 
         window.loadTickets = () => {
@@ -164,7 +188,6 @@
             const search = document.getElementById('searchInput').value.toLowerCase();
             const tech = document.getElementById('techFilter').value;
             const priority = document.getElementById('priorityFilter').value;
-
             const filtered = allTickets.filter(t => {
                 const cleanInc = String(t.ticketNumber || t.id.replace(/\D/g, '').slice(-5));
                 return (!search || t.clientName?.toLowerCase().includes(search) || cleanInc.includes(search)) &&
@@ -181,51 +204,29 @@
 
             tickets.forEach(t => {
                 const cleanInc = String(t.ticketNumber || t.id.replace(/\D/g, '').slice(-5));
-                let techOpts = `<option value="">שיוך טכנאי...</option>` + techsList.map(tech => `<option value="${tech.email}" ${t.assignedTo === tech.email ? 'selected' : ''}>${tech.name}</option>`).join('');
+                const sla = checkSLA(t.createdAt, t.priority, t.status);
+                const slaClass = sla.overdue ? 'sla-overdue' : '';
+                
+                let techOpts = `<option value="">שיוך...</option>` + techsList.map(tech => `<option value="${tech.email}" ${t.assignedTo === tech.email ? 'selected' : ''}>${tech.name}</option>`).join('');
                 
                 container.innerHTML += `
-                    <div class="bg-white p-4 rounded-lg shadow-sm ${priorityMap[t.priority] || 'priority-low'} flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div class="bg-white p-4 rounded-lg shadow-sm ${priorityMap[t.priority]} ${slaClass} flex flex-col md:flex-row justify-between items-center gap-4">
                         <div class="flex-1 cursor-pointer w-full" onclick="openTicket('${t.id}')">
                             <div class="flex items-center gap-2 mb-1">
-                                <span class="bg-slate-800 text-white text-[11px] px-2 py-0.5 rounded">${cleanInc}</span>
-                                <span class="text-xs font-bold">${t.clientName}</span>
+                                <span class="bg-slate-800 text-white text-[10px] px-2 py-0.5 rounded">${cleanInc}</span>
+                                <span class="text-xs font-bold text-slate-700">${t.clientName}</span>
+                                <span class="text-[10px] mr-auto ${sla.overdue ? 'text-red-600 font-black' : 'text-slate-400'}"><i class="far fa-clock"></i> ${sla.message}</span>
                             </div>
-                            <h3 class="font-bold text-slate-800">${t.title}</h3>
+                            <h3 class="font-bold text-slate-800 text-sm">${t.title}</h3>
                         </div>
-                        <div class="flex items-center gap-3">
-                            <select onchange="quickAssign('${t.id}', this.value)" class="text-[11px] border rounded p-1 bg-gray-50 outline-none w-32">${techOpts}</select>
-                            <button onclick="quickClose('${t.id}')" class="text-green-600 p-2 hover:bg-green-50 rounded-full"><i class="fas fa-check-circle"></i></button>
-                            ${isManager ? `<button onclick="permanentDelete('${t.id}')" class="text-red-500 p-2 rounded-full"><i class="fas fa-trash-alt"></i></button>` : ''}
+                        <div class="flex items-center gap-2">
+                            <select onchange="quickAssign('${t.id}', this.value)" class="text-[10px] border rounded p-1 bg-gray-50 w-24">${techOpts}</select>
+                            <button onclick="quickClose('${t.id}')" class="text-green-600 p-2"><i class="fas fa-check-circle text-lg"></i></button>
+                            ${isManager ? `<button onclick="permanentDelete('${t.id}')" class="text-red-400 p-2"><i class="fas fa-trash-alt"></i></button>` : ''}
                         </div>
                     </div>`;
             });
         }
-
-        window.openNewTicketModal = () => { document.getElementById('newTicketModal').classList.remove('hidden'); document.body.classList.add('modal-active'); };
-        window.closeNewTicketModal = () => { document.getElementById('newTicketModal').classList.add('hidden'); document.body.classList.remove('modal-active'); };
-        
-        window.createNewTicket = async () => {
-            const client = document.getElementById('newTicketClient').value.trim();
-            const title = document.getElementById('newTicketTitle').value.trim();
-            if(!client || !title) return alert("שם לקוח ונושא הם חובה");
-
-            const data = {
-                clientName: client,
-                clientPhone: document.getElementById('newTicketPhone').value,
-                title: title,
-                description: document.getElementById('newTicketDesc').value,
-                priority: document.getElementById('newTicketPriority').value,
-                status: "חדש",
-                createdAt: new Date().toISOString(),
-                assignedTo: "",
-                comments: []
-            };
-
-            await addDoc(collection(db, "tickets"), data);
-            closeNewTicketModal();
-            showToast("קריאה נפתחה");
-            document.querySelectorAll('#newTicketModal input, #newTicketModal textarea').forEach(i => i.value = '');
-        };
 
         window.openTicket = (id) => { window.activeTicketId = id; updateModalUI(); document.getElementById('ticketModal').classList.remove('hidden'); document.body.classList.add('modal-active'); };
         window.closeModal = () => { document.getElementById('ticketModal').classList.add('hidden'); document.body.classList.remove('modal-active'); window.activeTicketId = null; };
@@ -243,91 +244,74 @@
             document.getElementById('modalPrioritySelect').innerHTML = ['נמוכה', 'בינונית', 'גבוהה', 'קריטי'].map(p => `<option value="${p}" ${t.priority === p ? 'selected' : ''}>${p}</option>`).join('');
             document.getElementById('modalTechSelect').innerHTML = `<option value="">שיוך...</option>` + techsList.map(tech => `<option value="${tech.email}" ${t.assignedTo === tech.email ? 'selected' : ''}>${tech.name}</option>`).join('');
 
-            // תצוגת זמנים
+            // עדכון זמנים
             const timeInfo = document.getElementById('timeInfo');
             if(t.startTime) {
                 timeInfo.classList.remove('hidden');
-                document.getElementById('timeStarted').innerText = `התחלה: ${new Date(t.startTime).toLocaleString('he-IL')}`;
+                document.getElementById('timeStarted').innerText = `התחלה: ${new Date(t.startTime).toLocaleTimeString()}`;
                 if(t.endTime) {
-                    document.getElementById('timeEnded').innerText = `סיום: ${new Date(t.endTime).toLocaleString('he-IL')}`;
-                    const diff = (new Date(t.endTime) - new Date(t.startTime)) / 1000 / 60; // דקות
-                    document.getElementById('duration').innerText = `זמן עבודה: ${Math.round(diff)} דק'`;
-                } else {
-                    document.getElementById('timeEnded').innerText = "סיום: טרם";
-                    document.getElementById('duration').innerText = "בטיפול...";
-                }
-            } else {
-                timeInfo.classList.add('hidden');
-            }
+                    document.getElementById('timeEnded').innerText = `סיום: ${new Date(t.endTime).toLocaleTimeString()}`;
+                    const diff = Math.round((new Date(t.endTime) - new Date(t.startTime)) / 1000 / 60);
+                    document.getElementById('duration').innerText = `זמן: ${diff} דק'`;
+                } else { document.getElementById('timeEnded').innerText = "בטיפול..."; document.getElementById('duration').innerText = ""; }
+            } else { timeInfo.classList.add('hidden'); }
 
             const timeline = document.getElementById('modalTimeline');
-            if (t.comments && t.comments.length > 0) {
-                const sorted = [...t.comments].sort((a, b) => new Date(b.date) - new Date(a.date));
-                timeline.innerHTML = sorted.map(c => `<div class="timeline-item"><div class="text-[10px] font-bold text-blue-600">${c.userName} • ${new Date(c.date).toLocaleString('he-IL')}</div><p class="text-xs">${c.text}</p></div>`).join('');
-            } else { timeline.innerHTML = '<p class="text-xs text-gray-400 italic">אין עדכונים.</p>'; }
+            timeline.innerHTML = (t.comments || []).sort((a,b)=>new Date(b.date)-new Date(a.date)).map(c => `
+                <div class="timeline-item">
+                    <div class="text-[9px] font-bold text-blue-600">${c.userName} • ${new Date(c.date).toLocaleString()}</div>
+                    <p class="text-xs text-slate-600">${c.text}</p>
+                </div>`).join('') || '<p class="text-xs text-gray-400 italic">אין עדכונים.</p>';
         };
 
         window.saveAllChanges = async () => {
             const id = window.activeTicketId;
-            const currentTicket = allTickets.find(ticket => ticket.id === id);
-            const newStatus = document.getElementById('modalStatusSelect').value;
+            const current = allTickets.find(x => x.id === id);
+            const status = document.getElementById('modalStatusSelect').value;
             const comment = document.getElementById('newComment').value.trim();
+            const data = { status, assignedTo: document.getElementById('modalTechSelect').value, priority: document.getElementById('modalPrioritySelect').value };
             
-            const updateData = {
-                status: newStatus,
-                assignedTo: document.getElementById('modalTechSelect').value,
-                priority: document.getElementById('modalPrioritySelect').value
-            };
-
-            // לוגיקת זמן: התחלה
-            if (newStatus === 'בטיפול' && !currentTicket.startTime) {
-                updateData.startTime = new Date().toISOString();
-            }
-            // לוגיקת זמן: סיום
-            if (newStatus === 'הושלם' && !currentTicket.endTime) {
-                updateData.endTime = new Date().toISOString();
-            }
-
-            if(comment) updateData.comments = arrayUnion({ text: comment, userName: auth.currentUser.email, date: new Date().toISOString() });
+            if (status === 'בטיפול' && !current.startTime) data.startTime = new Date().toISOString();
+            if (status === 'הושלם' && !current.endTime) data.endTime = new Date().toISOString();
+            if (comment) data.comments = arrayUnion({ text: comment, userName: auth.currentUser.email, date: new Date().toISOString() });
             
+            await updateDoc(doc(db, "tickets", id), data);
             closeModal();
-            await updateDoc(doc(db, "tickets", id), updateData);
-            showToast("הקריאה עודכנה");
+            showToast("עודכן בהצלחה");
+        };
+
+        window.quickAssign = async (id, tech) => { 
+            const data = { assignedTo: tech, status: tech ? "בטיפול" : "חדש" };
+            if (tech) data.startTime = new Date().toISOString();
+            await updateDoc(doc(db, "tickets", id), data); 
+        };
+        window.quickClose = async (id) => { if(confirm("לסגור קריאה?")) await updateDoc(doc(db, "tickets", id), { status: "הושלם", endTime: new Date().toISOString() }); };
+        window.permanentDelete = async (id) => { if(confirm("למחוק לצמיתות?")) await deleteDoc(doc(db, "tickets", id)); };
+        
+        window.openNewTicketModal = () => document.getElementById('newTicketModal').classList.remove('hidden');
+        window.closeNewTicketModal = () => document.getElementById('newTicketModal').classList.add('hidden');
+        window.createNewTicket = async () => {
+            const clientName = document.getElementById('newTicketClient').value;
+            const title = document.getElementById('newTicketTitle').value;
+            if(!clientName || !title) return alert("חובה למלא שם ונושא");
+            await addDoc(collection(db, "tickets"), {
+                clientName, title, 
+                clientPhone: document.getElementById('newTicketPhone').value,
+                description: document.getElementById('newTicketDesc').value,
+                priority: document.getElementById('newTicketPriority').value,
+                status: "חדש", createdAt: new Date().toISOString(), comments: []
+            });
+            closeNewTicketModal();
         };
 
         window.changeStatusTab = (type) => { 
             currentStatusTab = type;
-            const btnOpen = document.getElementById('btnOpen');
-            const btnClosed = document.getElementById('btnClosed');
-            if (type === 'open') {
-                btnOpen.className = "px-4 py-2 text-sm font-medium bg-blue-600 text-white border border-blue-600 rounded-r-lg";
-                btnClosed.className = "px-4 py-2 text-sm font-medium bg-white text-gray-700 border border-gray-200 rounded-l-lg hover:bg-gray-50";
-            } else {
-                btnOpen.className = "px-4 py-2 text-sm font-medium bg-white text-gray-700 border border-gray-200 rounded-r-lg hover:bg-gray-50";
-                btnClosed.className = "px-4 py-2 text-sm font-medium bg-blue-600 text-white border border-blue-600 rounded-l-lg";
-            }
+            document.getElementById('btnOpen').className = type === 'open' ? "px-4 py-2 text-sm bg-blue-600 text-white rounded-r-lg" : "px-4 py-2 text-sm bg-white text-gray-700 border rounded-r-lg";
+            document.getElementById('btnClosed').className = type === 'closed' ? "px-4 py-2 text-sm bg-blue-600 text-white rounded-l-lg" : "px-4 py-2 text-sm bg-white text-gray-700 border rounded-l-lg";
             loadTickets(); 
         };
 
-        window.quickAssign = async (id, tech) => { 
-            const updateData = { assignedTo: tech, status: tech ? "בטיפול" : "חדש" };
-            if (tech) updateData.startTime = new Date().toISOString(); // התחלת זמן בשיוך מהיר
-            await updateDoc(doc(db, "tickets", id), updateData); 
-        };
-
-        window.quickClose = async (id) => { 
-            if(confirm("לסגור?")) {
-                await updateDoc(doc(db, "tickets", id), { 
-                    status: "הושלם",
-                    endTime: new Date().toISOString() // סיום זמן בסגירה מהירה
-                }); 
-            }
-        };
-
-        window.permanentDelete = async (id) => { if(confirm("למחוק?")) await deleteDoc(doc(db, "tickets", id)); };
-
-        function showToast(msg) { const x = document.getElementById("toast"); x.innerText = msg; x.className = "show"; setTimeout(() => { x.className = ""; }, 3000); }
-
+        function showToast(m) { const x=document.getElementById("toast"); x.innerText=m; x.className="show"; setTimeout(()=>x.className="",3000); }
         auth.onAuthStateChanged(user => { if(user) { fetchTechs(); loadTickets(); } });
     </script>
 </body>
