@@ -33,7 +33,6 @@
     <div id="toast">הפעולה בוצעה בהצלחה</div>
 
     <div class="max-w-6xl mx-auto p-6">
-        
         <div class="flex flex-col md:flex-row justify-between items-center mb-6">
             <h1 class="text-2xl font-bold text-slate-800">ניהול קריאות שירות</h1>
             <div class="flex gap-2 mt-4 md:mt-0">
@@ -71,40 +70,17 @@
                 <button onclick="closeNewTicketModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
             </div>
             <div class="p-6 space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 mb-1">שם לקוח / חברה</label>
-                    <input type="text" id="newTicketClient" class="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 mb-1">טלפון ליצירת קשר</label>
-                    <input type="tel" id="newTicketPhone" class="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 mb-1">נושא התקלה</label>
-                    <input type="text" id="newTicketTitle" class="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 mb-1">תיאור מפורט</label>
-                    <textarea id="newTicketDesc" class="w-full p-2 border rounded-lg h-24 outline-none focus:ring-2 focus:ring-blue-500"></textarea>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 mb-1">דחיפות</label>
-                        <select id="newTicketPriority" class="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="נמוכה">נמוכה</option>
-                            <option value="בינונית" selected>בינונית</option>
-                            <option value="גבוהה">גבוהה</option>
-                            <option value="קריטי">קריטי</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 mb-1">שיוך לטכנאי (אופציונלי)</label>
-                        <select id="newTicketAssign" class="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">ללא שיוך</option>
-                        </select>
-                    </div>
-                </div>
-                <button onclick="createNewTicket()" id="btnCreateTicket" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 transition shadow-lg mt-2">צור קריאה במערכת</button>
+                <input type="text" id="newTicketClient" placeholder="שם הלקוח" class="w-full p-2 border rounded-lg outline-none">
+                <input type="tel" id="newTicketPhone" placeholder="טלפון" class="w-full p-2 border rounded-lg outline-none">
+                <input type="text" id="newTicketTitle" placeholder="נושא התקלה" class="w-full p-2 border rounded-lg outline-none">
+                <textarea id="newTicketDesc" placeholder="תיאור התקלה..." class="w-full p-2 border rounded-lg h-24 outline-none"></textarea>
+                <select id="newTicketPriority" class="w-full p-2 border rounded-lg outline-none">
+                    <option value="נמוכה">נמוכה</option>
+                    <option value="בינונית" selected>בינונית</option>
+                    <option value="גבוהה">גבוהה</option>
+                    <option value="קריטי">קריטי</option>
+                </select>
+                <button onclick="createNewTicket()" id="btnCreateTicket" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold">צור קריאה</button>
             </div>
         </div>
     </div>
@@ -118,7 +94,6 @@
                 </div>
                 <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
             </div>
-            
             <div class="p-6 overflow-y-auto flex-1">
                 <div class="flex flex-wrap gap-4 mb-6 p-4 bg-gray-50 rounded-lg border items-center justify-between">
                     <div class="flex gap-4">
@@ -126,25 +101,21 @@
                         <a id="modalClientPhone" href="#" class="text-blue-600 font-bold hover:underline"></a>
                     </div>
                 </div>
-
                 <div class="grid grid-cols-3 gap-3 mb-6 bg-blue-50 p-4 rounded-lg">
                     <div><label class="block text-[10px] font-bold text-blue-400">סטטוס</label><select id="modalStatusSelect" class="w-full mt-1 border rounded p-1 text-sm"></select></div>
                     <div><label class="block text-[10px] font-bold text-blue-400">טכנאי</label><select id="modalTechSelect" class="w-full mt-1 border rounded p-1 text-sm"></select></div>
                     <div><label class="block text-[10px] font-bold text-blue-400">דחיפות</label><select id="modalPrioritySelect" class="w-full mt-1 border rounded p-1 text-sm"></select></div>
                 </div>
-
                 <div class="mb-6">
                     <h3 class="text-xs font-bold text-gray-400 uppercase mb-2">תיאור התקלה</h3>
                     <p id="modalDescription" class="text-slate-700 bg-white p-3 rounded-lg border border-slate-100 italic"></p>
                 </div>
-
                 <div class="mb-4 text-xs font-bold text-gray-400 uppercase">יומן טיפול</div>
                 <div id="modalTimeline" class="mr-2"></div>
             </div>
-
             <div class="p-4 border-t bg-gray-50">
-                <textarea id="newComment" placeholder="עדכן מה בוצע..." class="w-full p-2 border rounded-lg text-sm h-20 mb-2 focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
-                <button id="btnFullUpdate" onclick="saveAllChanges()" class="bg-blue-600 text-white w-full py-3 rounded-lg font-bold hover:bg-blue-700 shadow-lg transition">עדכן וסגור חלון</button>
+                <textarea id="newComment" placeholder="עדכן מה בוצע..." class="w-full p-2 border rounded-lg text-sm h-20 mb-2 outline-none"></textarea>
+                <button id="btnFullUpdate" onclick="saveAllChanges()" class="bg-blue-600 text-white w-full py-3 rounded-lg font-bold">עדכן וסגור</button>
             </div>
         </div>
     </div>
@@ -158,71 +129,43 @@
         let currentStatusTab = 'open';
         let techsList = []; 
         let allTickets = [];
-        let filteredTickets = [];
-
         const priorityMap = { 'קריטי': 'priority-critical', 'גבוהה': 'priority-high', 'בינונית': 'priority-medium', 'נמוכה': 'priority-low' };
 
-        // טעינת טכנאים ועדכון הרשימות
         async function fetchTechs() {
-            try {
-                const usersSnap = await getDocs(collection(db, "users"));
-                techsList = [];
-                usersSnap.forEach(uDoc => {
-                    const uData = uDoc.data();
-                    if (uData.role === 'tech' || uData.role === 'admin' || uData.email === ADMIN_PRIMARY) {
-                        techsList.push({ email: uData.email, name: uData.name || uData.email });
-                    }
-                });
-                
-                // עדכון פילטר טכנאים
-                const techFilter = document.getElementById('techFilter');
-                techFilter.innerHTML = '<option value="all">כל הטכנאים</option>';
-                // עדכון בחירת טכנאי בקריאה חדשה
-                const newTicketAssign = document.getElementById('newTicketAssign');
-                newTicketAssign.innerHTML = '<option value="">ללא שיוך (חדש)</option>';
-
-                techsList.forEach(t => {
-                    const opt = `<option value="${t.email}">${t.name}</option>`;
-                    techFilter.innerHTML += opt;
-                    newTicketAssign.innerHTML += opt;
-                });
-            } catch (e) { console.error("Error techs:", e); }
+            const usersSnap = await getDocs(collection(db, "users"));
+            techsList = [];
+            usersSnap.forEach(uDoc => {
+                const uData = uDoc.data();
+                if (uData.role === 'tech' || uData.role === 'admin' || uData.email === ADMIN_PRIMARY) {
+                    techsList.push({ email: uData.email, name: uData.name || uData.email });
+                }
+            });
+            const techFilter = document.getElementById('techFilter');
+            techsList.forEach(t => techFilter.innerHTML += `<option value="${t.email}">${t.name}</option>`);
         }
 
-        // ניהול טאבים (פתוחות/סגורות)
-        window.changeStatusTab = (type) => { 
-            currentStatusTab = type;
-            document.getElementById('btnOpen').className = type === 'open' ? "px-4 py-2 text-sm font-medium bg-blue-600 text-white border border-blue-600 rounded-r-lg" : "px-4 py-2 text-sm font-medium bg-white text-gray-700 border border-gray-200 rounded-r-lg hover:bg-gray-50";
-            document.getElementById('btnClosed').className = type === 'closed' ? "px-4 py-2 text-sm font-medium bg-blue-600 text-white border border-blue-600 rounded-l-lg" : "px-4 py-2 text-sm font-medium bg-white text-gray-700 border border-gray-200 rounded-l-lg hover:bg-gray-50";
-            loadTickets(); 
-        };
-
-        // טעינת קריאות
-        async function loadTickets() {
-            if (!auth.currentUser) return;
-            if (techsList.length === 0) await fetchTechs();
+        window.loadTickets = () => {
             const statusFilter = currentStatusTab === 'open' ? ["חדש", "בטיפול"] : ["הושלם", "מבוטל"];
             const q = query(collection(db, "tickets"), where("status", "in", statusFilter), orderBy("createdAt", "desc"));
-
             onSnapshot(q, (snapshot) => {
                 allTickets = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                applyFilters();
+                window.applyFilters();
                 if(window.activeTicketId) updateModalUI();
             });
-        }
+        };
 
         window.applyFilters = () => {
             const search = document.getElementById('searchInput').value.toLowerCase();
             const tech = document.getElementById('techFilter').value;
             const priority = document.getElementById('priorityFilter').value;
 
-            filteredTickets = allTickets.filter(t => {
+            const filtered = allTickets.filter(t => {
                 const cleanInc = String(t.ticketNumber || t.id.replace(/\D/g, '').slice(-5));
-                return (!search || t.clientName?.toLowerCase().includes(search) || String(t.clientPhone).includes(search) || cleanInc.includes(search)) &&
+                return (!search || t.clientName?.toLowerCase().includes(search) || cleanInc.includes(search)) &&
                        (tech === 'all' || t.assignedTo === tech) &&
                        (priority === 'all' || t.priority === priority);
             });
-            renderTickets(filteredTickets);
+            renderTickets(filtered);
         };
 
         function renderTickets(tickets) {
@@ -232,128 +175,99 @@
 
             tickets.forEach(t => {
                 const cleanInc = String(t.ticketNumber || t.id.replace(/\D/g, '').slice(-5));
-                let techOpts = `<option value="">שייך טכנאי...</option>` + techsList.map(tech => `<option value="${tech.email}" ${t.assignedTo === tech.email ? 'selected' : ''}>${tech.name}</option>`).join('');
-
+                let techOpts = `<option value="">שיוך טכנאי...</option>` + techsList.map(tech => `<option value="${tech.email}" ${t.assignedTo === tech.email ? 'selected' : ''}>${tech.name}</option>`).join('');
+                
                 container.innerHTML += `
-                    <div class="bg-white p-4 rounded-lg shadow-sm ${priorityMap[t.priority] || 'priority-low'} hover:shadow-md transition flex flex-col md:flex-row justify-between items-center gap-4 group">
+                    <div class="bg-white p-4 rounded-lg shadow-sm ${priorityMap[t.priority] || 'priority-low'} flex flex-col md:flex-row justify-between items-center gap-4">
                         <div class="flex-1 cursor-pointer w-full" onclick="openTicket('${t.id}')">
                             <div class="flex items-center gap-2 mb-1">
-                                <span class="bg-slate-800 text-white text-[11px] font-mono px-2 py-0.5 rounded">${cleanInc}</span>
-                                <span class="text-xs font-bold text-gray-700">${t.clientName || 'לקוח'}</span>
-                                <span class="text-[10px] text-blue-500 font-bold"><i class="fas fa-phone-alt ml-1"></i>${t.clientPhone || ''}</span>
+                                <span class="bg-slate-800 text-white text-[11px] px-2 py-0.5 rounded">${cleanInc}</span>
+                                <span class="text-xs font-bold">${t.clientName}</span>
                             </div>
                             <h3 class="font-bold text-slate-800">${t.title}</h3>
                         </div>
-                        <div class="flex items-center gap-3 w-full md:w-auto">
-                            <select onchange="quickAssign('${t.id}', this.value)" class="text-[11px] border rounded p-1 bg-gray-50 outline-none w-full md:w-32">${techOpts}</select>
+                        <div class="flex items-center gap-3">
+                            <select onchange="quickAssign('${t.id}', this.value)" class="text-[11px] border rounded p-1 bg-gray-50 outline-none w-32">${techOpts}</select>
                             <button onclick="quickClose('${t.id}')" class="text-green-600 p-2 hover:bg-green-50 rounded-full"><i class="fas fa-check-circle"></i></button>
-                            ${isManager ? `<button onclick="permanentDelete('${t.id}')" class="text-red-500 p-2 hover:bg-red-50 rounded-full"><i class="fas fa-trash-alt"></i></button>` : ''}
+                            ${isManager ? `<button onclick="permanentDelete('${t.id}')" class="text-red-500 p-2 rounded-full"><i class="fas fa-trash-alt"></i></button>` : ''}
                         </div>
                     </div>`;
             });
         }
 
-        // --- פונקציות פתיחת קריאה חדשה ---
-        window.openNewTicketModal = () => {
-            document.getElementById('newTicketModal').classList.remove('hidden');
-            document.body.classList.add('modal-active');
-        };
-
-        window.closeNewTicketModal = () => {
-            document.getElementById('newTicketModal').classList.add('hidden');
-            document.body.classList.remove('modal-active');
-            // ניקוי שדות
-            ['newTicketClient', 'newTicketPhone', 'newTicketTitle', 'newTicketDesc'].forEach(id => document.getElementById(id).value = '');
-        };
-
+        // פונקציות פתיחת קריאה חדשה
+        window.openNewTicketModal = () => { document.getElementById('newTicketModal').classList.remove('hidden'); document.body.classList.add('modal-active'); };
+        window.closeNewTicketModal = () => { document.getElementById('newTicketModal').classList.add('hidden'); document.body.classList.remove('modal-active'); };
+        
         window.createNewTicket = async () => {
-            const btn = document.getElementById('btnCreateTicket');
             const client = document.getElementById('newTicketClient').value.trim();
             const title = document.getElementById('newTicketTitle').value.trim();
-            const phone = document.getElementById('newTicketPhone').value.trim();
-            const desc = document.getElementById('newTicketDesc').value.trim();
-            const priority = document.getElementById('newTicketPriority').value;
-            const assign = document.getElementById('newTicketAssign').value;
+            if(!client || !title) return alert("שם לקוח ונושא הם חובה");
 
-            if(!client || !title) return alert("חובה למלא שם לקוח ונושא");
+            const data = {
+                clientName: client,
+                clientPhone: document.getElementById('newTicketPhone').value,
+                title: title,
+                description: document.getElementById('newTicketDesc').value,
+                priority: document.getElementById('newTicketPriority').value,
+                status: "חדש",
+                createdAt: new Date().toISOString(),
+                assignedTo: "",
+                comments: []
+            };
 
-            btn.disabled = true; btn.innerText = "שומר...";
-
-            try {
-                const newTicket = {
-                    clientName: client,
-                    clientPhone: phone,
-                    title: title,
-                    description: desc,
-                    priority: priority,
-                    assignedTo: assign,
-                    status: assign ? "בטיפול" : "חדש",
-                    createdAt: new Date().toISOString(),
-                    comments: []
-                };
-
-                await addDoc(collection(db, "tickets"), newTicket);
-                closeNewTicketModal();
-                showToast("קריאה חדשה נפתחה בהצלחה!");
-            } catch (e) {
-                alert("שגיאה ביצירה: " + e.message);
-            } finally {
-                btn.disabled = false; btn.innerText = "צור קריאה במערכת";
-            }
+            await addDoc(collection(db, "tickets"), data);
+            closeNewTicketModal();
+            showToast("קריאה נפתחה");
+            document.querySelectorAll('#newTicketModal input, #newTicketModal textarea').forEach(i => i.value = '');
         };
 
-        // --- פונקציות ניהול קריאה קיימת ---
+        // פונקציות עדכון קריאה קיימת
+        window.openTicket = (id) => { window.activeTicketId = id; updateModalUI(); document.getElementById('ticketModal').classList.remove('hidden'); document.body.classList.add('modal-active'); };
+        window.closeModal = () => { document.getElementById('ticketModal').classList.add('hidden'); document.body.classList.remove('modal-active'); window.activeTicketId = null; };
+
+        window.updateModalUI = () => {
+            const t = allTickets.find(ticket => ticket.id === window.activeTicketId);
+            if(!t) return;
+            document.getElementById('modalIncNumber').innerText = String(t.ticketNumber || t.id.replace(/\D/g, '').slice(-5));
+            document.getElementById('modalTitle').innerText = t.title;
+            document.getElementById('modalClientName').innerText = t.clientName;
+            document.getElementById('modalClientPhone').innerText = t.clientPhone;
+            document.getElementById('modalClientPhone').href = `tel:${t.clientPhone}`;
+            document.getElementById('modalDescription').innerText = t.description;
+            document.getElementById('modalStatusSelect').innerHTML = ['חדש', 'בטיפול', 'הושלם'].map(s => `<option value="${s}" ${t.status === s ? 'selected' : ''}>${s}</option>`).join('');
+            document.getElementById('modalPrioritySelect').innerHTML = ['נמוכה', 'בינונית', 'גבוהה', 'קריטי'].map(p => `<option value="${p}" ${t.priority === p ? 'selected' : ''}>${p}</option>`).join('');
+            document.getElementById('modalTechSelect').innerHTML = `<option value="">שיוך...</option>` + techsList.map(tech => `<option value="${tech.email}" ${t.assignedTo === tech.email ? 'selected' : ''}>${tech.name}</option>`).join('');
+
+            const timeline = document.getElementById('modalTimeline');
+            if (t.comments && t.comments.length > 0) {
+                const sorted = [...t.comments].sort((a, b) => new Date(b.date) - new Date(a.date));
+                timeline.innerHTML = sorted.map(c => `<div class="timeline-item"><div class="text-[10px] font-bold text-blue-600">${c.userName} • ${new Date(c.date).toLocaleString('he-IL')}</div><p class="text-xs">${c.text}</p></div>`).join('');
+            } else { timeline.innerHTML = '<p class="text-xs text-gray-400 italic">אין עדכונים.</p>'; }
+        };
+
         window.saveAllChanges = () => {
-            if (!window.activeTicketId) return;
             const id = window.activeTicketId;
             const comment = document.getElementById('newComment').value.trim();
-            
             const updateData = {
                 status: document.getElementById('modalStatusSelect').value,
                 assignedTo: document.getElementById('modalTechSelect').value,
                 priority: document.getElementById('modalPrioritySelect').value
             };
+            if(comment) updateData.comments = arrayUnion({ text: comment, userName: auth.currentUser.email, date: new Date().toISOString() });
             
-            if (comment) {
-                updateData.comments = arrayUnion({ 
-                    text: comment, userName: auth.currentUser.email, date: new Date().toISOString() 
-                });
-            }
-
             closeModal();
-            showToast("מעדכן...");
-
-            updateDoc(doc(db, "tickets", id), updateData)
-                .then(() => showToast("הקריאה עודכנה!"))
-                .catch(e => alert("שגיאה: " + e.message));
+            updateDoc(doc(db, "tickets", id), updateData).then(() => showToast("הקריאה עודכנה"));
         };
 
+        window.changeStatusTab = (type) => { currentStatusTab = type; loadTickets(); };
         window.quickAssign = async (id, tech) => { await updateDoc(doc(db, "tickets", id), { assignedTo: tech, status: tech ? "בטיפול" : "חדש" }); };
-        window.quickClose = async (id) => { if(confirm("לסגור קריאה?")) { await updateDoc(doc(db, "tickets", id), { status: "הושלם" }); showToast("קריאה נסגרה"); } };
-        window.permanentDelete = async (id) => { if(confirm("למחוק לצמיתות?")) await deleteDoc(doc(db, "tickets", id)); };
+        window.quickClose = async (id) => { if(confirm("לסגור?")) await updateDoc(doc(db, "tickets", id), { status: "הושלם" }); };
+        window.permanentDelete = async (id) => { if(confirm("למחוק?")) await deleteDoc(doc(db, "tickets", id)); };
 
-        window.openTicket = (id) => { 
-            window.activeTicketId = id; 
-            updateModalUI(); 
-            document.getElementById('ticketModal').classList.remove('hidden'); 
-            document.body.classList.add('modal-active'); 
-        };
-        
-        window.closeModal = () => { 
-            document.getElementById('ticketModal').classList.add('hidden'); 
-            document.body.classList.remove('modal-active'); 
-            window.activeTicketId = null; 
-            document.getElementById('newComment').value = ''; 
-        };
+        function showToast(msg) { const x = document.getElementById("toast"); x.innerText = msg; x.className = "show"; setTimeout(() => { x.className = ""; }, 3000); }
 
-        function showToast(msg) {
-            const x = document.getElementById("toast");
-            x.innerText = msg;
-            x.className = "show";
-            setTimeout(() => { x.className = x.className.replace("show", ""); }, 3000);
-        }
-
-        auth.onAuthStateChanged(user => { if(user) loadTickets(); });
+        auth.onAuthStateChanged(user => { if(user) { fetchTechs(); loadTickets(); } });
     </script>
 </body>
 </html>
