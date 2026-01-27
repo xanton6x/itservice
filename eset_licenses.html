@@ -2,76 +2,265 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>ניהול רישיונות ESET</title>
+    <title>ניהול רישיונות מתקדם</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
-<body class="bg-gray-50">
-    <div class="max-w-5xl mx-auto p-6">
-        <h1 class="text-2xl font-bold mb-6 text-gray-800">ניהול רישיונות ESET</h1>
+<body class="bg-slate-50 min-h-screen">
+    <div id="navbar-container"></div>
+
+    <div class="max-w-7xl mx-auto p-6">
         
-        <div id="adminForm" class="hidden bg-white p-6 rounded-lg shadow-md mb-8">
-            <h3 class="font-bold mb-4">הוסף רישיון חדש</h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <input type="text" id="clientName" placeholder="שם הלקוח/מחשב" class="border p-2 rounded">
-                <input type="date" id="expDate" class="border p-2 rounded">
-                <button id="addLicenseBtn" class="bg-green-600 text-white p-2 rounded hover:bg-green-700">שמור רישיון</button>
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+            <h1 class="text-3xl font-bold text-slate-800">ניהול רישיונות לקוחות</h1>
+            <div class="flex gap-2">
+                <button onclick="openModal('tabModal')" class="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-slate-700">
+                    <i class="fas fa-plus ml-1"></i> לשונית חדשה
+                </button>
+                <button onclick="openModal('quickImportModal')" class="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-purple-700">
+                    <i class="fas fa-paste ml-1"></i> ייבוא מהיר
+                </button>
+                <button onclick="openModal('licenseModal')" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">
+                    <i class="fas fa-user-plus ml-1"></i> הוספת לקוח
+                </button>
+                <label class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700 cursor-pointer">
+                    <i class="fas fa-file-import ml-1"></i> ייבוא מאקסל
+                    <input type="file" id="excelInput" class="hidden" accept=".xlsx, .xls">
+                </label>
             </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow overflow-hidden">
-            <table class="w-full text-right">
-                <thead class="bg-gray-200">
+        <div class="mb-6 relative">
+            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                <i class="fas fa-search text-gray-400"></i>
+            </div>
+            <input type="text" id="licenseSearch" placeholder="חיפוש לפי שם לקוח, מפתח או תאריך..." 
+                   class="w-full pr-10 p-3 border border-slate-200 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+        </div>
+
+        <div id="tabsContainer" class="flex border-b border-slate-200 mb-6 overflow-x-auto"></div>
+
+        <div class="bg-white shadow-xl rounded-xl overflow-hidden border">
+            <table class="w-full text-right border-collapse">
+                <thead class="bg-slate-100 border-b">
                     <tr>
-                        <th class="p-4">שם לקוח</th>
-                        <th class="p-4">תאריך תפוגה</th>
-                        <th class="p-4">סטטוס</th>
+                        <th class="p-4 font-bold text-slate-700">שם לקוח</th>
+                        <th class="p-4 font-bold text-slate-700">מפתח רישיון / פרטים</th>
+                        <th class="p-4 font-bold text-slate-700">תאריך פקיעה</th>
+                        <th class="p-4 font-bold text-slate-700">סטטוס</th>
+                        <th class="p-4 font-bold text-center">פעולות</th>
                     </tr>
                 </thead>
-                <tbody id="licenseTableBody"></tbody>
+                <tbody id="licenseTableBody" class="divide-y divide-slate-100"></tbody>
             </table>
         </div>
     </div>
 
-    <script type="module">
-        import { auth, db, injectNavbar, ADMIN_EMAIL } from './js/app.js';
-        import { collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    <div id="tabModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-xl w-96 shadow-2xl">
+            <h3 class="text-xl font-bold mb-4">יצירת לשונית חדשה</h3>
+            <input type="text" id="newTabName" placeholder="שם הרישיון (למשל: ESET)" class="w-full p-2 border rounded mb-4 outline-none focus:ring-2 focus:ring-blue-500">
+            <div class="flex justify-end gap-2">
+                <button onclick="closeModal('tabModal')" class="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded">ביטול</button>
+                <button id="saveTabBtn" class="px-4 py-2 bg-blue-600 text-white rounded font-bold hover:bg-blue-700 transition">שמור</button>
+            </div>
+        </div>
+    </div>
 
+    <div id="quickImportModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-xl w-[500px] shadow-2xl text-right">
+            <h3 class="text-xl font-bold mb-2">ייבוא מהיר מרשימה</h3>
+            <p class="text-xs text-gray-500 mb-4 italic">הדבק שורות בפורמט: שם לקוח, מפתח, תאריך (YYYY-MM-DD)</p>
+            <textarea id="rawTextImport" rows="8" class="w-full p-3 border rounded-lg font-mono text-sm bg-gray-50 mb-4 outline-none focus:ring-2 focus:ring-purple-500" placeholder="לקוח א, 12345-ABCD, 2026-05-10"></textarea>
+            <div class="flex justify-end gap-2">
+                <button onclick="closeModal('quickImportModal')" class="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded">ביטול</button>
+                <button id="processQuickImport" class="px-4 py-2 bg-purple-600 text-white rounded font-bold hover:bg-purple-700">הוסף הכל ללשונית</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="licenseModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-xl w-[450px] shadow-2xl">
+            <h3 class="text-xl font-bold mb-4">הוספת רישיון לקוח</h3>
+            <div class="space-y-3 text-right">
+                <input type="text" id="custName" placeholder="שם לקוח" class="w-full p-2 border rounded outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="text" id="licenseKey" placeholder="מפתח רישיון / הערות" class="w-full p-2 border rounded outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="date" id="expiryDate" class="w-full p-2 border rounded outline-none focus:ring-2 focus:ring-blue-500">
+                <select id="licCategory" class="w-full p-2 border rounded outline-none focus:ring-2 focus:ring-blue-500"></select>
+            </div>
+            <div class="flex justify-end gap-2 mt-6">
+                <button onclick="closeModal('licenseModal')" class="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded">ביטול</button>
+                <button id="saveLicBtn" class="px-4 py-2 bg-blue-600 text-white rounded font-bold hover:bg-blue-700">הוסף למערכת</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth, db, injectNavbar } from './js/app.js';
+        import { collection, addDoc, onSnapshot, query, where, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // הזרקת תפריט ניווט
         injectNavbar();
 
-        onAuthStateChanged(auth, (user) => {
-            if (user && user.email === ADMIN_EMAIL) {
-                document.getElementById('adminForm').classList.remove('hidden');
-            }
+        let currentActiveTab = '';
+
+        // פונקציית חיפוש בטבלה
+        document.getElementById('licenseSearch').addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('#licenseTableBody tr');
+            
+            rows.forEach(row => {
+                const text = row.innerText.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
         });
 
-        // הוספת רישיון
-        document.getElementById('addLicenseBtn').onclick = async () => {
-            const name = document.getElementById('clientName').value;
-            const date = document.getElementById('expDate').value;
-            if (name && date) {
-                await addDoc(collection(db, "licenses"), { clientName: name, expiryDate: date });
-                alert("רישיון נוסף!");
+        // --- ניהול לשוניות ---
+        onSnapshot(collection(db, "license_types"), (snapshot) => {
+            const tabsContainer = document.getElementById('tabsContainer');
+            const selectCategory = document.getElementById('licCategory');
+            tabsContainer.innerHTML = '';
+            selectCategory.innerHTML = '<option value="">בחר קטגוריה...</option>';
+            
+            snapshot.forEach(docSnap => {
+                const tab = docSnap.data().name;
+                if(!currentActiveTab) currentActiveTab = tab;
+
+                const btn = document.createElement('button');
+                btn.className = `px-6 py-3 font-bold transition-all whitespace-nowrap ${currentActiveTab === tab ? 'border-b-4 border-blue-600 text-blue-600 bg-blue-50' : 'text-gray-500 hover:bg-gray-100'}`;
+                btn.innerText = tab;
+                btn.onclick = () => { 
+                    currentActiveTab = tab; 
+                    // איפוס חיפוש במעבר לשונית
+                    document.getElementById('licenseSearch').value = '';
+                    loadLicenses(); 
+                };
+                tabsContainer.appendChild(btn);
+
+                selectCategory.innerHTML += `<option value="${tab}">${tab}</option>`;
+            });
+            loadLicenses();
+        });
+
+        document.getElementById('saveTabBtn').onclick = async () => {
+            const name = document.getElementById('newTabName').value.trim();
+            if(name) {
+                await addDoc(collection(db, "license_types"), { name });
+                closeModal('tabModal');
+                document.getElementById('newTabName').value = '';
             }
         };
 
-        // הצגת רישיונות
-        onSnapshot(collection(db, "licenses"), (snapshot) => {
-            const tbody = document.getElementById('licenseTableBody');
-            tbody.innerHTML = '';
-            snapshot.forEach(doc => {
-                const d = doc.data();
-                const isExpired = new Date(d.expiryDate) < new Date();
-                tbody.innerHTML += `
-                    <tr class="border-b ${isExpired ? 'bg-red-50' : ''}">
-                        <td class="p-4">${d.clientName}</td>
-                        <td class="p-4">${d.expiryDate}</td>
-                        <td class="p-4 font-bold ${isExpired ? 'text-red-600' : 'text-green-600'}">
-                            ${isExpired ? 'פג תוקף' : 'תקין'}
-                        </td>
-                    </tr>`;
+        // --- ניהול רישיונות ---
+        async function loadLicenses() {
+            if (!currentActiveTab) return;
+            const q = query(collection(db, "licenses"), where("category", "==", currentActiveTab));
+            onSnapshot(q, (snapshot) => {
+                const tbody = document.getElementById('licenseTableBody');
+                tbody.innerHTML = '';
+                
+                snapshot.forEach(d => {
+                    const data = d.data();
+                    const id = d.id;
+                    const isExpired = data.expiry && new Date(data.expiry) < new Date();
+
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-gray-50 transition">
+                            <td class="p-4 font-bold text-slate-800">${data.customer}</td>
+                            <td class="p-4 text-slate-600 font-mono text-sm">${data.key}</td>
+                            <td class="p-4">${data.expiry || '---'}</td>
+                            <td class="p-4">
+                                <span class="px-2 py-1 rounded-full text-xs font-bold ${isExpired ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}">
+                                    ${isExpired ? 'פג תוקף' : 'פעיל'}
+                                </span>
+                            </td>
+                            <td class="p-4 text-center">
+                                <button onclick="deleteLic('${id}')" class="text-red-300 hover:text-red-600 transition-colors"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>`;
+                });
+                // הפעלת סינון חיפוש אם קיים טקסט בחיפוש
+                const currentSearch = document.getElementById('licenseSearch').value.toLowerCase();
+                if(currentSearch) {
+                    document.querySelectorAll('#licenseTableBody tr').forEach(row => {
+                        row.style.display = row.innerText.toLowerCase().includes(currentSearch) ? '' : 'none';
+                    });
+                }
             });
+        }
+
+        // לוגיקת ייבוא מהיר (הדבקה)
+        document.getElementById('processQuickImport').onclick = async () => {
+            const text = document.getElementById('rawTextImport').value;
+            const lines = text.split('\n');
+            let count = 0;
+
+            if (!currentActiveTab) return alert("נא לבחור לשונית קודם!");
+
+            for (let line of lines) {
+                if (line.trim() === '') continue;
+                const parts = line.split(/[,\t;]/);
+                
+                if (parts.length >= 1) {
+                    await addDoc(collection(db, "licenses"), {
+                        customer: parts[0]?.trim() || 'לא ידוע',
+                        key: parts[1]?.trim() || '---',
+                        expiry: parts[2]?.trim() || '',
+                        category: currentActiveTab
+                    });
+                    count++;
+                }
+            }
+            alert(`ייבוא הושלם: הוספנו ${count} רשומות ל-${currentActiveTab}`);
+            closeModal('quickImportModal');
+            document.getElementById('rawTextImport').value = '';
+        };
+
+        document.getElementById('saveLicBtn').onclick = async () => {
+            const docData = {
+                customer: document.getElementById('custName').value,
+                key: document.getElementById('licenseKey').value,
+                expiry: document.getElementById('expiryDate').value,
+                category: document.getElementById('licCategory').value
+            };
+            if(docData.customer && docData.category) {
+                await addDoc(collection(db, "licenses"), docData);
+                closeModal('licenseModal');
+                // ניקוי טופס
+                document.getElementById('custName').value = '';
+                document.getElementById('licenseKey').value = '';
+                document.getElementById('expiryDate').value = '';
+            }
+        };
+
+        // ייבוא אקסל
+        document.getElementById('excelInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = async (evt) => {
+                const data = evt.target.result;
+                const workbook = XLSX.read(data, { type: 'binary' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const json = XLSX.utils.sheet_to_json(worksheet);
+
+                for (let item of json) {
+                    await addDoc(collection(db, "licenses"), {
+                        customer: item.Customer || item['שם לקוח'] || 'לא ידוע',
+                        key: item.Key || item['מפתח'] || '---',
+                        expiry: item.Expiry || item['תאריך פקיעה'] || '',
+                        category: currentActiveTab
+                    });
+                }
+                alert(`יובאו ${json.length} לקוחות בהצלחה!`);
+            };
+            reader.readAsBinaryString(file);
         });
+
+        window.deleteLic = async (id) => { if(confirm('למחוק רישיון זה?')) await deleteDoc(doc(db, "licenses", id)); };
+        window.openModal = (id) => document.getElementById(id).classList.remove('hidden');
+        window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
     </script>
 </body>
 </html>
