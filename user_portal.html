@@ -9,7 +9,7 @@
     <div class="max-w-2xl mx-auto p-6">
         <div class="bg-white p-8 rounded-xl shadow-lg border-t-4 border-blue-600">
             <h1 class="text-2xl font-bold mb-6 text-gray-800">דווח על תקלה חדשה</h1>
-            
+
             <form id="ticketForm" class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium mb-1">שם הלקוח / חברה</label>
@@ -35,6 +35,16 @@
                 </div>
 
                 <div>
+                    <label class="block text-sm font-medium mb-1">דחיפות התקלה</label>
+                    <select id="priority" required class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="נמוכה">נמוכה</option>
+                        <option value="בינונית" selected>בינונית</option>
+                        <option value="גבוהה">גבוהה</option>
+                        <option value="קריטי">קריטי - השבתת עבודה</option>
+                    </select>
+                </div>
+
+                <div>
                     <label class="block text-sm font-medium mb-1">נושא הקריאה (קצר)</label>
                     <input type="text" id="title" required class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
@@ -44,9 +54,9 @@
                     <textarea id="description" rows="4" required class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none" placeholder="פרט כאן כמה שיותר על הבעיה..."></textarea>
                 </div>
 
-                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded hover:bg-blue-700 transition shadow-md">שלח קריאה</button>
+                <button type="submit" id="submitBtn" class="w-full bg-blue-600 text-white font-bold py-3 rounded hover:bg-blue-700 transition shadow-md">שלח קריאה</button>
             </form>
-            <p id="successMsg" class="mt-4 text-center text-green-600 font-bold hidden">הקריאה נשלחה בהצלחה!</p>
+            <p id="successMsg" class="mt-4 text-center text-green-600 font-bold hidden">הקריאה נשלחה בהצלחה! מעביר אותך לרשימה...</p>
         </div>
     </div>
 
@@ -61,16 +71,23 @@
             const user = auth.currentUser;
             if (!user) return alert("עליך להיות מחובר");
 
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerText = 'שולח...';
+
             const ticketData = {
                 clientName: document.getElementById('clientName').value,
-                phone: document.getElementById('phone').value,
+                // התיקון הקריטי: שינינו מ-phone ל-clientPhone כדי שיתאים לדף הניהול
+                clientPhone: document.getElementById('phone').value,
                 issueType: document.getElementById('issueType').value,
+                priority: document.getElementById('priority').value, // הוספת דחיפות
                 title: document.getElementById('title').value,
                 description: document.getElementById('description').value,
                 status: "חדש",
                 userId: user.uid,
                 userEmail: user.email,
-                assignedTo: "", // טרם שובץ
+                assignedTo: "",
+                comments: [], // אתחול מערך תגובות ריק
                 createdAt: new Date().toISOString()
             };
 
@@ -78,9 +95,13 @@
                 await addDoc(collection(db, "tickets"), ticketData);
                 document.getElementById('ticketForm').reset();
                 document.getElementById('successMsg').classList.remove('hidden');
-                setTimeout(() => window.location.href = 'incidents.html', 2000);
+
+                // מעבר לדף הקריאות
+                setTimeout(() => window.location.href = 'incidents.html', 1500);
             } catch (error) {
                 alert("שגיאה בשליחה: " + error.message);
+                submitBtn.disabled = false;
+                submitBtn.innerText = 'שלח קריאה';
             }
         };
     </script>

@@ -118,18 +118,9 @@
                 </div>
 
                 <div class="grid grid-cols-3 gap-3 mb-6 bg-blue-50 p-4 rounded-lg">
-                    <div>
-                        <label class="block text-[9px] font-bold text-blue-400 uppercase">סטטוס</label>
-                        <select id="modalStatusSelect" class="w-full mt-1 border rounded p-1 text-sm bg-white"></select>
-                    </div>
-                    <div>
-                        <label class="block text-[9px] font-bold text-blue-400 uppercase">טכנאי</label>
-                        <select id="modalTechSelect" class="w-full mt-1 border rounded p-1 text-sm bg-white"></select>
-                    </div>
-                    <div>
-                        <label class="block text-[9px] font-bold text-blue-400 uppercase">דחיפות</label>
-                        <select id="modalPrioritySelect" class="w-full mt-1 border rounded p-1 text-sm bg-white"></select>
-                    </div>
+                    <div><label class="block text-[9px] font-bold text-blue-400 uppercase">סטטוס</label><select id="modalStatusSelect" class="w-full mt-1 border rounded p-1 text-sm bg-white outline-none"></select></div>
+                    <div><label class="block text-[9px] font-bold text-blue-400 uppercase">טכנאי</label><select id="modalTechSelect" class="w-full mt-1 border rounded p-1 text-sm bg-white outline-none"></select></div>
+                    <div><label class="block text-[9px] font-bold text-blue-400 uppercase">דחיפות</label><select id="modalPrioritySelect" class="w-full mt-1 border rounded p-1 text-sm bg-white outline-none"></select></div>
                 </div>
 
                 <div class="mb-6">
@@ -142,8 +133,8 @@
             </div>
 
             <div class="p-4 border-t bg-gray-50">
-                <textarea id="newComment" placeholder="מה בוצע בקריאה?" class="w-full p-2 border rounded-lg text-sm h-20 mb-2"></textarea>
-                <button id="btnFullUpdate" onclick="saveAllChanges()" class="bg-blue-600 text-white w-full py-3 rounded-lg font-bold hover:bg-blue-700 shadow-lg transition">עדכן וסגור</button>
+                <textarea id="newComment" placeholder="מה בוצע בקריאה?" class="w-full p-2 border rounded-lg text-sm h-20 mb-2 focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
+                <button id="btnFullUpdate" onclick="saveAllChanges()" class="bg-blue-600 text-white w-full py-3 rounded-lg font-bold hover:bg-blue-700 shadow-lg transition">עדכן וסגור חלון</button>
             </div>
         </div>
     </div>
@@ -175,17 +166,12 @@
         function updateFiltersUI() {
             const techFilter = document.getElementById('techFilter');
             techsList.forEach(tech => {
-                const opt = document.createElement('option');
-                opt.value = tech.email;
-                opt.textContent = tech.name;
+                const opt = document.createElement('option'); opt.value = tech.email; opt.textContent = tech.name;
                 techFilter.appendChild(opt);
             });
         }
 
-        window.changeStatusTab = (type) => {
-            currentStatusTab = type;
-            loadTickets();
-        };
+        window.changeStatusTab = (type) => { currentStatusTab = type; loadTickets(); };
 
         async function loadTickets() {
             if (!auth.currentUser) return;
@@ -204,10 +190,10 @@
             const search = document.getElementById('searchInput').value.toLowerCase();
             const tech = document.getElementById('techFilter').value;
             const priority = document.getElementById('priorityFilter').value;
-
             const filtered = allTickets.filter(t => {
                 const incNum = `INC-${t.ticketNumber || t.id.slice(-4)}`.toLowerCase();
-                return (!search || t.clientName?.toLowerCase().includes(search) || t.clientPhone?.includes(search) || incNum.includes(search)) &&
+                const phone = String(t.clientPhone || "");
+                return (!search || t.clientName?.toLowerCase().includes(search) || phone.includes(search) || incNum.includes(search)) &&
                     (tech === 'all' || t.assignedTo === tech) &&
                     (priority === 'all' || t.priority === priority);
             });
@@ -219,23 +205,41 @@
             container.innerHTML = '';
             tickets.forEach(t => {
                 const pClass = priorityMap[t.priority] || 'border-gray-300';
+                const phoneDisplay = t.clientPhone || "אין מספר";
                 container.innerHTML += `
-                        <div onclick="openTicket('${t.id}')" class="bg-white p-4 rounded-lg shadow-sm border-r-4 ${pClass} hover:shadow-md transition cursor-pointer flex justify-between items-center">
-                            <div>
+                        <div class="bg-white p-4 rounded-lg shadow-sm border-r-4 ${pClass} hover:shadow-md transition cursor-pointer flex justify-between items-center relative group">
+                            <div class="flex-1" onclick="openTicket('${t.id}')">
                                 <div class="flex items-center gap-2 mb-1">
                                     <span class="bg-slate-100 text-[10px] font-bold px-1.5 py-0.5 rounded border">INC-${t.ticketNumber || t.id.slice(-4)}</span>
                                     <span class="text-xs font-bold text-gray-700">${t.clientName}</span>
-                                    <span class="text-[10px] text-gray-400"><i class="fas fa-phone-alt ml-1"></i>${t.clientPhone || '---'}</span>
+                                    <span class="text-[10px] text-blue-500 font-bold"><i class="fas fa-phone-alt ml-1"></i>${phoneDisplay}</span>
                                 </div>
                                 <h3 class="font-bold text-slate-800">${t.title}</h3>
                                 <div class="text-[10px] mt-1 text-gray-400 uppercase">
                                     <span class="font-bold text-blue-600">${t.status}</span> | <span>${t.assignedTo || 'ללא שיוך'}</span>
                                 </div>
                             </div>
-                            <div class="text-[10px] font-bold ${t.priority === 'קריטי' ? 'text-red-600' : 'text-gray-400'}">${t.priority || 'רגיל'}</div>
+                            <div class="flex items-center gap-3">
+                                <div class="text-[10px] font-bold ${t.priority === 'קריטי' ? 'text-red-600' : 'text-gray-400'}">${t.priority || 'נמוכה'}</div>
+                                ${t.status !== 'הושלם' ? `
+                                    <button onclick="quickClose('${t.id}')" title="סגור קריאה מהר" class="bg-green-50 text-green-600 p-2 rounded-full hover:bg-green-600 hover:text-white transition opacity-0 group-hover:opacity-100">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                ` : ''}
+                            </div>
                         </div>`;
             });
         }
+
+        window.quickClose = async (id) => {
+            if (!confirm("האם לסגור את הקריאה כ'הושלם'?")) return;
+            try {
+                await updateDoc(doc(db, "tickets", id), {
+                    status: "הושלם",
+                    comments: arrayUnion({ text: "נסגר בשימוש מהיר מהרשימה", userName: auth.currentUser.email, date: new Date().toISOString() })
+                });
+            } catch (e) { alert("שגיאה בסגירה: " + e.message); }
+        };
 
         window.openTicket = (id) => {
             window.activeTicketId = id;
@@ -250,8 +254,8 @@
             document.getElementById('modalIncNumber').innerText = `INC-${t.ticketNumber || t.id.slice(-4)}`;
             document.getElementById('modalTitle').innerText = t.title;
             document.getElementById('modalClientName').innerText = t.clientName;
-            document.getElementById('modalClientPhone').innerText = t.clientPhone || 'אין טלפון';
-            document.getElementById('modalClientPhone').href = `tel:${t.clientPhone}`;
+            document.getElementById('modalClientPhone').innerText = t.clientPhone || 'לא הוזן מספר';
+            document.getElementById('modalClientPhone').href = t.clientPhone ? `tel:${t.clientPhone}` : '#';
             document.getElementById('modalDescription').innerText = t.description;
 
             const badge = document.getElementById('modalPriorityBadge');
@@ -280,9 +284,7 @@
                     priority: document.getElementById('modalPrioritySelect').value
                 };
                 const comment = document.getElementById('newComment').value.trim();
-                if (comment) {
-                    updateData.comments = arrayUnion({ text: comment, userName: auth.currentUser.email, date: new Date().toISOString() });
-                }
+                if (comment) { updateData.comments = arrayUnion({ text: comment, userName: auth.currentUser.email, date: new Date().toISOString() }); }
                 await updateDoc(doc(db, "tickets", window.activeTicketId), updateData);
                 document.getElementById('newComment').value = '';
                 closeModal();
