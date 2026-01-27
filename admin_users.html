@@ -2,51 +2,90 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ניהול משתמשים - מערכת IT</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700&display=swap');
+        body { font-family: 'Assistant', sans-serif; }
+        #toast {
+            visibility: hidden; min-width: 250px; background-color: #333; color: #fff;
+            text-align: center; border-radius: 8px; padding: 16px; position: fixed;
+            z-index: 100; left: 30px; bottom: 30px; font-size: 14px;
+        }
+        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
+        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+        @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+    </style>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-100 min-h-screen">
+
+    <div id="toast">הפעולה בוצעה בהצלחה</div>
 
     <div class="max-w-6xl mx-auto p-6">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-bold text-slate-800">ניהול הרשאות ומשתמשים</h1>
-            <button onclick="openAddUserModal()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-indigo-700 transition">
-                <i class="fas fa-user-plus ml-1"></i> משתמש חדש
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-slate-800">ניהול משתמשים והרשאות</h1>
+                <p class="text-gray-500 text-sm">ניהול גישה, תפקידים וסיסמאות למערכת ה-IT</p>
+            </div>
+            <button onclick="openAddUserModal()" class="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition shadow-lg flex items-center gap-2">
+                <i class="fas fa-user-plus"></i>
+                משתמש חדש
             </button>
         </div>
 
-        <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
-            <table class="w-full text-right border-collapse">
-                <thead class="bg-slate-50 border-b">
-                    <tr>
-                        <th class="p-4 text-sm font-bold text-slate-600">שם</th>
-                        <th class="p-4 text-sm font-bold text-slate-600">אימייל</th>
-                        <th class="p-4 text-sm font-bold text-slate-600">תפקיד</th>
-                        <th class="p-4 text-sm font-bold text-slate-600">פעולות</th>
-                    </tr>
-                </thead>
-                <tbody id="usersTableBody">
-                    </tbody>
-            </table>
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-right">
+                    <thead class="bg-slate-50 border-b border-gray-200">
+                        <tr>
+                            <th class="p-4 text-sm font-bold text-slate-600">שם משתמש</th>
+                            <th class="p-4 text-sm font-bold text-slate-600">אימייל</th>
+                            <th class="p-4 text-sm font-bold text-slate-600">תפקיד / הרשאה</th>
+                            <th class="p-4 text-sm font-bold text-slate-600">פעולות</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody" class="divide-y divide-gray-100">
+                        </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
-    <div id="addUserModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6">
-            <h2 class="text-xl font-bold mb-4">הוספת משתמש חדש למערכת</h2>
+    <div id="addUserModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 transition-all">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-slate-800">הוספת משתמש חדש</h2>
+                <button onclick="closeAddUserModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            </div>
+            
             <div class="space-y-4">
-                <input type="text" id="newUserName" placeholder="שם מלא" class="w-full p-2 border rounded-lg outline-none">
-                <input type="email" id="newUserEmail" placeholder="אימייל (חובה להתחברות)" class="w-full p-2 border rounded-lg outline-none">
-                <select id="newUserRole" class="w-full p-2 border rounded-lg outline-none">
-                    <option value="user">משתמש כללי (פתיחת קריאות בלבד)</option>
-                    <option value="tech">טכנאי (טיפול בקריאות)</option>
-                    <option value="admin">מנהל מערכת (גישה להכל)</option>
-                </select>
-                <p class="text-[11px] text-gray-500">הערה: לאחר ההוספה, המשתמש יקבל אימייל לאיפוס סיסמה כדי להגדיר סיסמה ראשונית.</p>
-                <div class="flex gap-2">
-                    <button onclick="createNewUser()" id="saveBtn" class="flex-1 bg-indigo-600 text-white py-2 rounded-lg font-bold">צור משתמש</button>
-                    <button onclick="closeAddUserModal()" class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg font-bold">ביטול</button>
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 mb-1 uppercase">שם מלא</label>
+                    <input type="text" id="newUserName" class="w-full p-2.5 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 mb-1 uppercase">כתובת אימייל</label>
+                    <input type="email" id="newUserEmail" class="w-full p-2.5 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 mb-1 uppercase">תפקיד במערכת</label>
+                    <select id="newUserRole" class="w-full p-2.5 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50 cursor-pointer">
+                        <option value="user">משתמש כללי (פתיחת קריאות)</option>
+                        <option value="tech">טכנאי (טיפול בקריאות)</option>
+                        <option value="admin">מנהל מערכת (גישה מלאה)</option>
+                    </select>
+                </div>
+                
+                <div class="bg-blue-50 p-3 rounded-lg flex gap-3 items-start mt-4">
+                    <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
+                    <p class="text-[11px] text-blue-700 leading-relaxed">עם יצירת המשתמש, יישלח אליו אימייל אוטומטי המזמין אותו לקבוע סיסמה ראשונית ולהתחבר למערכת.</p>
+                </div>
+
+                <div class="flex gap-3 pt-4">
+                    <button onclick="createNewUser()" id="saveBtn" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition shadow-md">צור משתמש</button>
+                    <button onclick="closeAddUserModal()" class="flex-1 bg-gray-100 text-gray-600 py-3 rounded-xl font-bold hover:bg-gray-200 transition">ביטול</button>
                 </div>
             </div>
         </div>
@@ -54,15 +93,19 @@
 
     <script type="module">
         import { auth, db, injectNavbar, ADMIN_PRIMARY } from './js/app.js';
-        import { collection, onSnapshot, doc, setDoc, deleteDoc, query, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { collection, onSnapshot, doc, setDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         injectNavbar();
 
-        // בדיקת הרשאת מנהל
-        auth.onAuthStateChanged(async (user) => {
-            if (!user || user.email !== ADMIN_PRIMARY) {
-                alert("אין לך הרשאה לדף זה");
+        // הגנה על הדף - רק מנהל ראשי נכנס
+        auth.onAuthStateChanged((user) => {
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+            if (user.email !== ADMIN_PRIMARY) {
+                alert("אין לך הרשאות ניהול לדף זה");
                 window.location.href = 'index.html';
                 return;
             }
@@ -79,23 +122,31 @@
                     const isSystemAdmin = u.email === ADMIN_PRIMARY;
                     
                     tbody.innerHTML += `
-                        <tr class="border-b hover:bg-gray-50 transition">
-                            <td class="p-4 text-sm text-slate-800 font-medium">${u.name || 'ללא שם'}</td>
-                            <td class="p-4 text-sm text-slate-600">${u.email}</td>
+                        <tr class="border-b hover:bg-gray-50/50 transition">
                             <td class="p-4">
-                                <span class="px-2 py-1 rounded-full text-[10px] font-bold ${getRoleStyle(u.role)}">
-                                    ${getRoleName(u.role)}
-                                </span>
+                                <div class="font-bold text-slate-800">${u.name || 'משתמש חדש'}</div>
                             </td>
-                            <td class="p-4 flex gap-2">
-                                <button onclick="resetUserPassword('${u.email}')" title="שלח איפוס סיסמה" class="text-blue-500 hover:bg-blue-50 p-2 rounded-lg">
-                                    <i class="fas fa-key"></i>
-                                </button>
-                                ${!isSystemAdmin ? `
-                                    <button onclick="deleteUserAccount('${u.email}')" title="מחק משתמש" class="text-red-500 hover:bg-red-50 p-2 rounded-lg">
-                                        <i class="fas fa-trash-alt"></i>
+                            <td class="p-4 text-sm text-slate-500">${u.email}</td>
+                            <td class="p-4">
+                                <select onchange="updateUserRole('${u.email}', this.value)" 
+                                    ${isSystemAdmin ? 'disabled' : ''} 
+                                    class="text-xs font-bold p-1.5 border rounded-lg bg-white outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer ${isSystemAdmin ? 'opacity-50' : ''}">
+                                    <option value="user" ${u.role === 'user' ? 'selected' : ''}>משתמש כללי</option>
+                                    <option value="tech" ${u.role === 'tech' ? 'selected' : ''}>טכנאי</option>
+                                    <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>מנהל אתר</option>
+                                </select>
+                            </td>
+                            <td class="p-4">
+                                <div class="flex gap-1">
+                                    <button onclick="resetUserPassword('${u.email}')" title="איפוס סיסמה" class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition">
+                                        <i class="fas fa-key"></i>
                                     </button>
-                                ` : ''}
+                                    ${!isSystemAdmin ? `
+                                        <button onclick="deleteUserAccount('${u.email}')" title="מחיקת משתמש" class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    ` : ''}
+                                </div>
                             </td>
                         </tr>
                     `;
@@ -103,75 +154,65 @@
             });
         }
 
-        function getRoleName(role) {
-            const roles = { 'admin': 'מנהל אתר', 'tech': 'טכנאי', 'user': 'משתמש כללי' };
-            return roles[role] || 'משתמש';
-        }
+        // שינוי תפקיד בלייב
+        window.updateUserRole = async (email, newRole) => {
+            try {
+                await updateDoc(doc(db, "users", email), { role: newRole });
+                showToast("ההרשאה עודכנה בהצלחה");
+            } catch (e) { alert("שגיאה בעדכון: " + e.message); }
+        };
 
-        function getRoleStyle(role) {
-            if (role === 'admin') return 'bg-purple-100 text-purple-700';
-            if (role === 'tech') return 'bg-blue-100 text-blue-700';
-            return 'bg-gray-100 text-gray-700';
-        }
+        window.openAddUserModal = () => { document.getElementById('addUserModal').classList.remove('hidden'); };
+        window.closeAddUserModal = () => { document.getElementById('addUserModal').classList.add('hidden'); };
 
-        // פתיחה/סגירה של המודאל
-        window.openAddUserModal = () => document.getElementById('addUserModal').classList.remove('hidden');
-        window.closeAddUserModal = () => document.getElementById('addUserModal').classList.add('hidden');
-
-        // יצירת משתמש חדש
         window.createNewUser = async () => {
-            const name = document.getElementById('newUserName').value;
+            const name = document.getElementById('newUserName').value.trim();
             const email = document.getElementById('newUserEmail').value.toLowerCase().trim();
             const role = document.getElementById('newUserRole').value;
             const btn = document.getElementById('saveBtn');
 
-            if (!email || !name) return alert("נא למלא את כל השדות");
+            if (!email || !name) return alert("נא למלא שם ואימייל");
 
-            btn.disabled = true;
-            btn.innerText = "מעבד...";
+            btn.disabled = true; btn.innerText = "יוצר משתמש...";
 
             try {
-                // 1. שמירה ב-Database
+                // שמירה ב-DB
                 await setDoc(doc(db, "users", email), {
-                    name,
-                    email,
-                    role,
-                    createdAt: new Date().toISOString()
+                    name, email, role, createdAt: new Date().toISOString()
                 });
 
-                // 2. שליחת אימייל איפוס סיסמה (זה יאפשר לו לקבוע סיסמה בפעם הראשונה)
+                // שליחת אימייל להגדרת סיסמה
                 await sendPasswordResetEmail(auth, email);
                 
-                alert(`משתמש נוצר בהצלחה! נשלח אימייל לכתובת ${email} להגדרת סיסמה ראשונית.`);
+                showToast("משתמש נוצר ואימייל נשלח!");
                 closeAddUserModal();
-            } catch (e) {
-                alert("שגיאה: " + e.message);
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "צור משתמש";
-            }
+            } catch (e) { alert(e.message); }
+            finally { btn.disabled = false; btn.innerText = "צור משתמש"; }
         };
 
-        // איפוס סיסמה
         window.resetUserPassword = async (email) => {
-            if (confirm(`לשלח אימייל לשחזור סיסמה ל-${email}?`)) {
+            if (confirm(`לשלח אימייל לאיפוס סיסמה ל-${email}?`)) {
                 try {
                     await sendPasswordResetEmail(auth, email);
-                    alert("אימייל איפוס סיסמה נשלח בהצלחה.");
+                    showToast("אימייל איפוס נשלח");
                 } catch (e) { alert(e.message); }
             }
         };
 
-        // מחיקת משתמש (מה-Firestore)
         window.deleteUserAccount = async (email) => {
-            if (confirm(`האם אתה בטוח שברצונך להסיר את ${email} מהמערכת?`)) {
+            if (confirm(`למחוק את ${email} מהמערכת? פעולה זו אינה הפיכה.`)) {
                 try {
                     await deleteDoc(doc(db, "users", email));
-                    alert("המשתמש הוסר מהמאגר.");
+                    showToast("משתמש נמחק");
                 } catch (e) { alert(e.message); }
             }
         };
 
+        function showToast(msg) {
+            const x = document.getElementById("toast");
+            x.innerText = msg; x.className = "show";
+            setTimeout(() => { x.className = ""; }, 3000);
+        }
     </script>
 </body>
 </html>
