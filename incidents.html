@@ -260,7 +260,25 @@
             updateDoc(doc(db, "tickets", id), updateData).then(() => showToast("הקריאה עודכנה"));
         };
 
-        window.changeStatusTab = (type) => { currentStatusTab = type; loadTickets(); };
+        window.changeStatusTab = (type) => { 
+    currentStatusTab = type;
+    
+    // הגדרת אלמנטים
+    const btnOpen = document.getElementById('btnOpen');
+    const btnClosed = document.getElementById('btnClosed');
+
+    // עדכון עיצוב הכפתורים כדי שהסימון הכחול יעבור
+    if (type === 'open') {
+        btnOpen.className = "px-4 py-2 text-sm font-medium bg-blue-600 text-white border border-blue-600 rounded-r-lg";
+        btnClosed.className = "px-4 py-2 text-sm font-medium bg-white text-gray-700 border border-gray-200 rounded-l-lg hover:bg-gray-50";
+    } else {
+        btnOpen.className = "px-4 py-2 text-sm font-medium bg-white text-gray-700 border border-gray-200 rounded-r-lg hover:bg-gray-50";
+        btnClosed.className = "px-4 py-2 text-sm font-medium bg-blue-600 text-white border border-blue-600 rounded-l-lg";
+    }
+
+    // טעינת הקריאות המתאימות
+    loadTickets(); 
+};
         window.quickAssign = async (id, tech) => { await updateDoc(doc(db, "tickets", id), { assignedTo: tech, status: tech ? "בטיפול" : "חדש" }); };
         window.quickClose = async (id) => { if(confirm("לסגור?")) await updateDoc(doc(db, "tickets", id), { status: "הושלם" }); };
         window.permanentDelete = async (id) => { if(confirm("למחוק?")) await deleteDoc(doc(db, "tickets", id)); };
