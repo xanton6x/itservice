@@ -14,38 +14,70 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
-export const ADMIN_EMAIL_PRIMARY = "anton@rcc.co.il"; // מנהל על
+export const ADMIN_PRIMARY = "anton@rcc.co.il";
 
+// פונקציה להזרקת התפריט - מתוקנת ויציבה
 export function injectNavbar() {
-    const nav = document.createElement('nav');
-    nav.className = "bg-slate-800 text-white p-4 flex justify-between items-center mb-6 shadow-md sticky top-0 z-50 flex-row-reverse";
-    nav.innerHTML = `
-        <div class="font-bold text-xl text-blue-400">IT SYSTEM</div>
-        <div class="space-x-4 flex space-x-reverse" id="navLinks">
-            <a href="index.html" class="hover:text-blue-300 px-3">בית</a>
-            <a href="user_portal.html" class="hover:text-blue-300 px-3">פתיחת קריאה</a>
-            <a href="incidents.html" class="hover:text-blue-300 px-3">קריאות</a>
-            <button onclick="window.handleLogout()" class="bg-red-600 px-3 py-1 rounded hover:bg-red-700 mr-4">ניתוק</button>
-        </div>
-    `;
-    document.body.prepend(nav);
-
     onAuthStateChanged(auth, async (user) => {
-        if (user) {
-            // בדיקה ב-Firestore מה התפקיד של המשתמש
-            const userDoc = await getDoc(doc(db, "users", user.uid));
-            const userData = userDoc.data();
-            
-            if (user.email === ADMIN_EMAIL_PRIMARY || (userData && userData.role === 'admin')) {
-                const navLinks = document.getElementById('navLinks');
-                // הוספת כפתורים למנהל בלבד
-                navLinks.insertAdjacentHTML('afterbegin', `
-                    <a href="admin_users.html" class="text-orange-400 font-bold px-3">ניהול משתמשים</a>
-                    <a href="eset_licenses.html" class="hover:text-blue-300 px-3">רישיונות</a>
-                    <a href="report.html" class="hover:text-blue-300 px-3">דוחות</a>
-                `);
+        if (!user) {
+            if (!window.location.pathname.includes('login.html') && !window.location.pathname.includes('register.html')) {
+                window.location.href = 'login.html';
             }
+            return;
         }
+
+        let role = 'user';
+        let isAdmin = (user.email === ADMIN_PRIMARY);
+
+        // ניסיון למשוך תפקיד מ-Firestore בלי לתקוע את הדף
+        try {
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            if (userDoc.exists()) {
+                role = userDoc.data().role;
+                if (role === 'admin') isAdmin = true;
+            }
+        } catch (e) {
+            console.warn("לא הצלחתי למשוך תפקיד מ-Firestore, משתמש בהרשאות ברירת מחדל.");
+        }
+
+        // בניית התפריט - שימוש ב-flex רגיל למניעת היפוך
+        const nav = document.createElement('nav');
+        nav.className = "bg-slate-800 text-white p-4 flex justify-between items-center mb-6 shadow-md sticky top-0 z-50 px-8";
+        nav.dir = "rtl"; // הבטחת כיוון עברית
+
+        let links = `
+            <a href="index.html" class="hover:text-blue-300 ml-5 font-medium">בית</a>
+            <a href="user_portal.html" class="hover:text-blue-300 ml-5 font-medium">פתיחת קריאה</a>
+            <a href="incidents.html" class="hover:text-blue-300 ml-5 font-medium">קריאות</a>
+        `;
+
+        if (isAdmin) {
+            links += `
+                <a href="admin_users.html" class="text-orange-400 font-bold ml-5">ניהול משתמשים</a>
+                <a href="eset_licenses.html" class="hover:text-blue-300 ml-5 font-medium">רישיונות</a>
+            `;
+        }
+
+        if (isAdmin || role === 'tech') {
+            links += `<a href="report.html" class="hover:text-blue-300 ml-5 font-medium">דוחות</a>`;
+        }
+
+        nav.innerHTML = `
+            <div class="flex items-center">
+                <div class="font-bold text-xl text-blue-400 ml-8 border-l border-slate-600 pl-4">IT SYSTEM</div>
+                <div class="flex items-center">${links}</div>
+            </div>
+            <div class="flex items-center gap-4">
+                <span class="text-xs text-slate-400 hidden md:block">${user.email}</span>
+                <button onclick="window.handleLogout()" class="bg-red-600/80 px-4 py-1 rounded text-sm hover:bg-red-700 transition">ניתוק</button>
+            </div>
+        `;
+
+        // מונע כפילות של התפריט בטעינה מחדש
+        const existingNav = document.querySelector('nav');
+        if (existingNav) existingNav.remove();
+        
+        document.body.prepend(nav);
     });
 }
 

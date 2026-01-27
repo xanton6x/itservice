@@ -2,157 +2,116 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>ניהול משתמשים מתקדם - IT System</title>
+    <title>ניהול משתמשים - IT System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body class="bg-slate-50 min-h-screen">
+<body class="bg-gray-100">
 
-    <div class="max-w-6xl mx-auto p-4 md:p-8">
-        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-            <div>
-                <h1 class="text-3xl font-extrabold text-slate-800 tracking-tight">ניהול משתמשים</h1>
-                <p class="text-slate-500 mt-1">ניהול הרשאות, תפקידים ובקרת גישה למערכת</p>
+    <div class="max-w-6xl mx-auto p-6">
+        <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-blue-600">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-2xl font-bold text-gray-800">ניהול הרשאות ומשתמשים</h1>
+                <div id="stats" class="text-sm font-medium text-slate-500"></div>
             </div>
-            <div class="flex gap-4">
-                <div class="bg-white shadow-sm border p-3 rounded-lg text-center min-w-[100px]">
-                    <span class="block text-2xl font-bold text-blue-600" id="countTotal">0</span>
-                    <span class="text-xs text-slate-400 uppercase">סה"כ</span>
+            
+            <div id="userList" class="min-h-[200px] relative">
+                <div id="loader" class="flex flex-col items-center justify-center p-10">
+                    <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+                    <p class="mt-4 text-gray-500 italic">מושך נתונים מ-Firestore...</p>
                 </div>
-                <div class="bg-white shadow-sm border p-3 rounded-lg text-center min-w-[100px]">
-                    <span class="block text-2xl font-bold text-orange-500" id="countAdmins">0</span>
-                    <span class="text-xs text-slate-400 uppercase">מנהלים</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white p-4 rounded-t-xl border-x border-t flex flex-col md:flex-row gap-4 items-center justify-between">
-            <div class="relative w-full md:w-72">
-                <i class="fas fa-search absolute right-3 top-3 text-slate-400"></i>
-                <input type="text" id="userSearch" placeholder="חיפוש לפי אימייל או שם..." 
-                       class="w-full pr-10 pl-4 py-2 bg-slate-50 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition">
-            </div>
-            <div class="flex gap-2">
-                <button onclick="exportUsers()" class="text-sm text-slate-600 hover:text-blue-600 px-3 py-2">
-                    <i class="fas fa-file-export ml-1"></i> ייצוא
-                </button>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-b-xl shadow-xl border overflow-hidden">
-            <table class="w-full text-right">
-                <thead>
-                    <tr class="bg-slate-800 text-white text-sm">
-                        <th class="p-4 font-semibold">משתמש</th>
-                        <th class="p-4 font-semibold">תפקיד</th>
-                        <th class="p-4 font-semibold">תאריך הצטרפות</th>
-                        <th class="p-4 font-semibold text-center">פעולות</th>
-                    </tr>
-                </thead>
-                <tbody id="userTableBody" class="divide-y divide-slate-100">
-                    </tbody>
-            </table>
-            <div id="loadingState" class="p-20 text-center">
-                <i class="fas fa-circle-notch fa-spin text-4xl text-blue-500"></i>
-                <p class="mt-4 text-slate-500">מרענן רשימת משתמשים...</p>
             </div>
         </div>
     </div>
 
     <script type="module">
-        import { auth, db, injectNavbar, ADMIN_EMAIL } from './js/app.js';
+        import { auth, db, injectNavbar, ADMIN_PRIMARY } from './js/app.js';
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { collection, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { collection, onSnapshot, doc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+        // הזרקת התפריט
         injectNavbar();
 
-        // בדיקת הרשאות מנהל
+        const listDiv = document.getElementById('userList');
+        const loader = document.getElementById('loader');
+
         onAuthStateChanged(auth, (user) => {
-            if (!user || user.email !== ADMIN_EMAIL) {
-                window.location.href = 'index.html';
-            }
+            if (!user) return;
+
+            // התחלת האזנה לנתונים
+            const q = query(collection(db, "users"), orderBy("email", "asc"));
+            
+            const unsubscribe = onSnapshot(q, (snapshot) => {
+                loader.classList.add('hidden'); // הסתרת הטעינה ברגע שיש תשובה (גם אם ריקה)
+                
+                if (snapshot.empty) {
+                    listDiv.innerHTML = '<p class="text-center p-10 text-gray-500">לא נמצאו משתמשים רשומים.</p>';
+                    return;
+                }
+
+                renderTable(snapshot);
+            }, (error) => {
+                console.error("Firestore Error:", error);
+                listDiv.innerHTML = `
+                    <div class="bg-red-50 text-red-700 p-4 rounded-lg text-center">
+                        <i class="fas fa-exclamation-triangle ml-2"></i>
+                        שגיאת הרשאות: וודא שחוקי ה-Firestore מאפשרים קריאה.
+                    </div>`;
+            });
         });
 
-        const tableBody = document.getElementById('userTableBody');
-        const loading = document.getElementById('loadingState');
-
-        // האזנה דינמית למשתמשים
-        const q = query(collection(db, "users"), orderBy("createdAt", "desc"));
-        onSnapshot(q, (snapshot) => {
-            loading.classList.add('hidden');
-            tableBody.innerHTML = '';
+        function renderTable(snapshot) {
+            let html = `
+                <table class="w-full text-right mt-4 border-collapse overflow-hidden rounded-lg">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-700">
+                            <th class="p-3 border">שם</th>
+                            <th class="p-3 border">אימייל</th>
+                            <th class="p-3 border">תפקיד</th>
+                            <th class="p-3 border text-center">פעולה</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
             
-            let admins = 0;
             snapshot.forEach(userDoc => {
                 const user = userDoc.data();
                 const id = userDoc.id;
-                if(user.role === 'admin') admins++;
+                const isPrimary = (user.email === ADMIN_PRIMARY);
 
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50 transition-colors";
-                tr.innerHTML = `
-                    <td class="p-4">
-                        <div class="flex items-center">
-                            <div class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 ml-3">
-                                <i class="fas fa-user"></i>
-                            </div>
-                            <div>
-                                <div class="font-bold text-slate-800">${user.displayName || 'משתמש ללא שם'}</div>
-                                <div class="text-xs text-slate-400">${user.email}</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="p-4">
-// חפש את ה-select בתוך הקוד של admin_users.html ועדכן אותו:
-<select onchange="updateRole('${id}', this.value)" class="...">
-    <option value="user" ${user.role === 'user' ? 'selected' : ''}>משתמש קצה</option>
-    <option value="tech" ${user.role === 'tech' ? 'selected' : ''}>טכנאי IT</option>
-    <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>מנהל מערכת</option>
-</select>
-                    </td>
-                    <td class="p-4 text-sm text-slate-500 italic">
-                        ${user.createdAt ? new Date(user.createdAt).toLocaleDateString('he-IL') : '---'}
-                    </td>
-                    <td class="p-4 text-center">
-                        <button onclick="deleteUser('${id}', '${user.email}')" class="text-slate-300 hover:text-red-500 transition">
-                            <i class="fas fa-trash-alt"></i>
-                        </button>
-                    </td>
-                `;
-                tableBody.appendChild(tr);
+                html += `
+                    <tr class="border-b hover:bg-gray-50 transition">
+                        <td class="p-3 border font-medium">${user.displayName || '---'}</td>
+                        <td class="p-3 border text-slate-600">${user.email}</td>
+                        <td class="p-3 border">
+                            <span class="px-2 py-1 rounded text-xs font-bold ${user.role === 'admin' ? 'bg-orange-100 text-orange-700' : (user.role === 'tech' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700')}">
+                                ${user.role || 'user'}
+                            </span>
+                        </td>
+                        <td class="p-3 border text-center">
+                            ${isPrimary ? '<span class="text-xs text-slate-400 italic">ניהול על</span>' : `
+                                <select onchange="changeRole('${id}', this.value)" class="text-xs border rounded p-1 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                                    <option value="user" ${user.role === 'user' ? 'selected' : ''}>משתמש</option>
+                                    <option value="tech" ${user.role === 'tech' ? 'selected' : ''}>טכנאי</option>
+                                    <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>מנהל</option>
+                                </select>
+                            `}
+                        </td>
+                    </tr>`;
             });
+            
+            html += `</tbody></table>`;
+            listDiv.innerHTML = html;
+            document.getElementById('stats').innerText = `סה"כ משתמשים: ${snapshot.size}`;
+        }
 
-            // עדכון מונים
-            document.getElementById('countTotal').innerText = snapshot.size;
-            document.getElementById('countAdmins').innerText = admins;
-        });
-
-        // פונקציות גלובליות
-        window.updateRole = async (uid, newRole) => {
+        // פונקציית עדכון
+        window.changeRole = async (id, newRole) => {
             try {
-                await updateDoc(doc(db, "users", uid), { role: newRole });
-                // חיווי הצלחה קטן (אופציונלי)
-            } catch (e) { alert("שגיאה בעדכון: " + e.message); }
-        };
-
-        window.deleteUser = async (uid, email) => {
-            if (email === ADMIN_EMAIL) return alert("לא ניתן למחוק את מנהל המערכת הראשי!");
-            if (confirm(`האם אתה בטוח שברצונך להסיר את המשתמש ${email} מהמערכת?`)) {
-                try {
-                    await deleteDoc(doc(db, "users", uid));
-                } catch (e) { alert("שגיאה במחיקה: " + e.message); }
+                await updateDoc(doc(db, "users", id), { role: newRole });
+            } catch (e) {
+                alert("שגיאה בעדכון התפקיד. וודא שאתה מחובר כמנהל.");
             }
         };
-
-        // חיפוש בטבלה
-        document.getElementById('userSearch').addEventListener('input', (e) => {
-            const term = e.target.value.toLowerCase();
-            const rows = tableBody.querySelectorAll('tr');
-            rows.forEach(row => {
-                const text = row.innerText.toLowerCase();
-                row.style.display = text.includes(term) ? '' : 'none';
-            });
-        });
     </script>
 </body>
 </html>
