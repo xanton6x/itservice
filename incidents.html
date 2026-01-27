@@ -2,119 +2,116 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>ניהול קריאות - IT System</title>
+    <title>ניהול קריאות מתקדם</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body class="bg-gray-50 pb-10">
+<body class="bg-gray-100">
     <div class="max-w-6xl mx-auto p-6">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-bold text-gray-800">לוח קריאות שירות</h1>
-            <span id="ticketCount" class="bg-blue-600 text-white px-3 py-1 rounded-full text-sm">0 קריאות</span>
-        </div>
-
-        <div class="bg-white rounded-xl shadow-md overflow-hidden">
-            <table class="w-full text-right border-collapse">
-                <thead>
-                    <tr class="bg-slate-800 text-white">
-                        <th class="p-4 border-l border-slate-700">תאריך</th>
-                        <th class="p-4 border-l border-slate-700">נושא</th>
-                        <th class="p-4 border-l border-slate-700">משתמש</th>
-                        <th class="p-4 border-l border-slate-700">סטטוס</th>
+        <h1 class="text-2xl font-bold mb-6">לוח בקרה - קריאות שירות</h1>
+        
+        <div class="bg-white shadow-xl rounded-lg overflow-hidden">
+            <table class="w-full text-right">
+                <thead class="bg-slate-800 text-white">
+                    <tr>
+                        <th class="p-4">נושא ותיאור</th>
+                        <th class="p-4">סטטוס</th>
+                        <th class="p-4">טכנאי מטפל</th>
                         <th class="p-4 text-center">פעולות</th>
                     </tr>
                 </thead>
-                <tbody id="tickets-list">
-                    <tr><td colspan="5" class="p-10 text-center text-gray-500 italic">טוען קריאות...</td></tr>
-                </tbody>
+                <tbody id="ticketsList">
+                    </tbody>
             </table>
         </div>
     </div>
 
     <script type="module">
-        import { auth, db, injectNavbar, ADMIN_EMAIL } from './js/app.js';
-        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { collection, query, where, onSnapshot, doc, updateDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { auth, db, injectNavbar, ADMIN_PRIMARY } from './js/app.js';
+        import { collection, query, where, onSnapshot, doc, updateDoc, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         injectNavbar();
 
-        onAuthStateChanged(auth, (user) => {
-            if (!user) {
-                window.location.href = 'login.html';
-                return;
-            }
+        let allTechs = []; // רשימת טכנאים לשימוש בתפריט הבחירה
 
-            // הגדרת השאילתה: אנטון רואה הכל, משתמש רגיל רואה רק את השיוך שלו
-            let q = query(collection(db, "tickets"), where("userId", "==", user.uid));
-            
-            if (user.email === ADMIN_EMAIL) {
-                q = query(collection(db, "tickets"), orderBy("createdAt", "desc"));
-            }
-
-            onSnapshot(q, (snapshot) => {
-                const list = document.getElementById('tickets-list');
-                document.getElementById('ticketCount').innerText = `${snapshot.size} קריאות`;
-                list.innerHTML = '';
-
-                if (snapshot.empty) {
-                    list.innerHTML = '<tr><td colspan="5" class="p-10 text-center">אין קריאות להצגה</td></tr>';
-                    return;
+        async function init() {
+            // 1. שליפת רשימת הטכנאים והמנהלים מהמערכת
+            const usersSnap = await getDocs(collection(db, "users"));
+            usersSnap.forEach(u => {
+                const data = u.data();
+                if (data.role === 'tech' || data.role === 'admin' || data.email === ADMIN_PRIMARY) {
+                    allTechs.push({ email: data.email, name: data.displayName || data.email });
                 }
+            });
 
-                snapshot.forEach((ticketDoc) => {
-                    const t = ticketDoc.data();
-                    const id = ticketDoc.id; // מזהה המסמך לעדכון
-                    
-                    const tr = document.createElement('tr');
-                    tr.className = "border-b hover:bg-blue-50 transition";
-                    tr.innerHTML = `
-                        <td class="p-4 text-sm text-gray-600">${t.createdAt ? t.createdAt.split('T')[0] : 'N/A'}</td>
-                        <td class="p-4 font-bold text-gray-800">
-                            ${t.title}
-                            <div class="text-xs font-normal text-gray-500">${t.description}</div>
-                        </td>
-                        <td class="p-4 text-sm">${t.userEmail || 'אנונימי'}</td>
-                        <td class="p-4">
-                            <span class="px-3 py-1 rounded-full text-xs font-bold ${getStatusClass(t.status)}">
-                                ${t.status || 'חדש'}
-                            </span>
-                        </td>
-                        <td class="p-4 text-center">
-                            <select onchange="updateTicketStatus('${id}', this.value)" class="text-xs border rounded p-1 bg-white shadow-sm">
-                                <option value="" disabled selected>שנה סטטוס</option>
-                                <option value="חדש">חדש</option>
-                                <option value="בטיפול">בטיפול</option>
-                                <option value="הושלם">הושלם</option>
-                                <option value="מבוטל">מבוטל</option>
-                            </select>
-                        </td>
-                    `;
-                    list.appendChild(tr);
+            // 2. האזנה לקריאות לפי הרשאות
+            auth.onAuthStateChanged(async (user) => {
+                if (!user) return;
+                
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                const role = userDoc.data()?.role || 'user';
+                const isAdmin = (user.email === ADMIN_PRIMARY || role === 'admin');
+                const isTech = (role === 'tech');
+
+                let q = query(collection(db, "tickets"), where("userId", "==", user.uid));
+                if (isAdmin) q = collection(db, "tickets");
+                else if (isTech) q = query(collection(db, "tickets"), where("assignedTo", "==", user.email));
+
+                onSnapshot(q, (snapshot) => {
+                    renderTickets(snapshot, user.email, isAdmin, isTech);
                 });
             });
-        });
-
-        // פונקציית עזר לצבעי סטטוס
-        function getStatusClass(status) {
-            switch(status) {
-                case 'חדש': return 'bg-blue-100 text-blue-700';
-                case 'בטיפול': return 'bg-orange-100 text-orange-700';
-                case 'הושלם': return 'bg-green-100 text-green-700';
-                case 'מבוטל': return 'bg-red-100 text-red-700';
-                default: return 'bg-gray-100 text-gray-700';
-            }
         }
 
-        // פונקציית עדכון ב-Firebase
-        window.updateTicketStatus = async (ticketId, newStatus) => {
+        function renderTickets(snapshot, currentUserEmail, isAdmin, isTech) {
+            const list = document.getElementById('ticketsList');
+            list.innerHTML = '';
+
+            snapshot.forEach(ticketDoc => {
+                const t = ticketDoc.data();
+                const id = ticketDoc.id;
+
+                // יצירת אפשרויות לבחירת טכנאי
+                let techOptions = `<option value="">ללא שיוך</option>`;
+                allTechs.forEach(tech => {
+                    techOptions += `<option value="${tech.email}" ${t.assignedTo === tech.email ? 'selected' : ''}>${tech.name}</option>`;
+                });
+
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-gray-50";
+                tr.innerHTML = `
+                    <td class="p-4">
+                        <div class="font-bold">${t.title}</div>
+                        <div class="text-xs text-gray-500">${t.description}</div>
+                    </td>
+                    <td class="p-4">
+                        <select onchange="updateTicket('${id}', {status: this.value})" class="text-xs border rounded p-1">
+                            <option value="חדש" ${t.status === 'חדש' ? 'selected' : ''}>חדש</option>
+                            <option value="בטיפול" ${t.status === 'בטיפול' ? 'selected' : ''}>בטיפול</option>
+                            <option value="הושלם" ${t.status === 'הושלם' ? 'selected' : ''}>הושלם</option>
+                        </select>
+                    </td>
+                    <td class="p-4">
+                        ${(isAdmin || (isTech && t.assignedTo === currentUserEmail)) ? `
+                            <select onchange="updateTicket('${id}', {assignedTo: this.value})" class="text-xs border rounded p-1 bg-blue-50">
+                                ${techOptions}
+                            </select>
+                        ` : `<span class="text-xs">${t.assignedTo || 'לא שויך'}</span>`}
+                    </td>
+                    <td class="p-4 text-center text-gray-400 text-xs">${t.userEmail}</td>
+                `;
+                list.appendChild(tr);
+            });
+        }
+
+        // פונקציית עדכון גלובלית
+        window.updateTicket = async (id, data) => {
             try {
-                const ticketRef = doc(db, "tickets", ticketId);
-                await updateDoc(ticketRef, { status: newStatus });
-                console.log("Status updated to:", newStatus);
-            } catch (error) {
-                alert("שגיאה בעדכון הסטטוס: " + error.message);
-            }
+                await updateDoc(doc(db, "tickets", id), data);
+            } catch (e) { alert("שגיאה בעדכון: " + e.message); }
         };
+
+        init();
     </script>
 </body>
 </html>

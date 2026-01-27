@@ -103,11 +103,12 @@
                         </div>
                     </td>
                     <td class="p-4">
-                        <select onchange="updateRole('${id}', this.value)" 
-                                class="text-xs font-bold border rounded-md p-1 outline-none ${user.role === 'admin' ? 'bg-orange-50 text-orange-600 border-orange-200' : 'bg-blue-50 text-blue-600 border-blue-200'}">
-                            <option value="user" ${user.role !== 'admin' ? 'selected' : ''}>משתמש קצה</option>
-                            <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>מנהל מערכת</option>
-                        </select>
+// חפש את ה-select בתוך הקוד של admin_users.html ועדכן אותו:
+<select onchange="updateRole('${id}', this.value)" class="...">
+    <option value="user" ${user.role === 'user' ? 'selected' : ''}>משתמש קצה</option>
+    <option value="tech" ${user.role === 'tech' ? 'selected' : ''}>טכנאי IT</option>
+    <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>מנהל מערכת</option>
+</select>
                     </td>
                     <td class="p-4 text-sm text-slate-500 italic">
                         ${user.createdAt ? new Date(user.createdAt).toLocaleDateString('he-IL') : '---'}

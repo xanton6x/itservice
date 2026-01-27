@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, query, where, onSnapshot, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCkmi_WVVGk6PvIGoh8FEzXOyzzDN2jJqA",
@@ -14,33 +14,39 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
-export const ADMIN_EMAIL = "anton@rcc.co.il";
+export const ADMIN_EMAIL_PRIMARY = "anton@rcc.co.il"; // מנהל על
 
-// הזרקת תפריט ניווט לכל עמוד
 export function injectNavbar() {
     const nav = document.createElement('nav');
     nav.className = "bg-slate-800 text-white p-4 flex justify-between items-center mb-6 shadow-md sticky top-0 z-50 flex-row-reverse";
     nav.innerHTML = `
         <div class="font-bold text-xl text-blue-400">IT SYSTEM</div>
-        <div class="space-x-4 flex space-x-reverse">
+        <div class="space-x-4 flex space-x-reverse" id="navLinks">
             <a href="index.html" class="hover:text-blue-300 px-3">בית</a>
             <a href="user_portal.html" class="hover:text-blue-300 px-3">פתיחת קריאה</a>
             <a href="incidents.html" class="hover:text-blue-300 px-3">קריאות</a>
-            <a href="eset_licenses.html" class="hover:text-blue-300 px-3">רישיונות</a>
-            <a href="admin_users.html" id="adminLink" class="hidden text-orange-400 px-3">ניהול משתמשים</a>
             <button onclick="window.handleLogout()" class="bg-red-600 px-3 py-1 rounded hover:bg-red-700 mr-4">ניתוק</button>
         </div>
     `;
     document.body.prepend(nav);
 
-    // בדיקה אם להציג לינק ניהול
-    onAuthStateChanged(auth, (user) => {
-        if (user && user.email === ADMIN_EMAIL) {
-            document.getElementById('adminLink').classList.remove('hidden');
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            // בדיקה ב-Firestore מה התפקיד של המשתמש
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            const userData = userDoc.data();
+            
+            if (user.email === ADMIN_EMAIL_PRIMARY || (userData && userData.role === 'admin')) {
+                const navLinks = document.getElementById('navLinks');
+                // הוספת כפתורים למנהל בלבד
+                navLinks.insertAdjacentHTML('afterbegin', `
+                    <a href="admin_users.html" class="text-orange-400 font-bold px-3">ניהול משתמשים</a>
+                    <a href="eset_licenses.html" class="hover:text-blue-300 px-3">רישיונות</a>
+                    <a href="report.html" class="hover:text-blue-300 px-3">דוחות</a>
+                `);
+            }
         }
     });
 }
 
-window.handleLogout = () => {
-    signOut(auth).then(() => window.location.href = 'login.html');
-};
+window.handleLogout = () => signOut(auth).then(() => window.location.href = 'login.html');
