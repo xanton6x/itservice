@@ -5,28 +5,28 @@
     <title>ניהול משתמשים</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-50 p-8">
-    <div class="max-w-4xl mx-auto">
-        <h1 class="text-2xl font-bold mb-6">ניהול משתמשים והרשאות</h1>
-        <div class="bg-white rounded-lg shadow overflow-hidden">
-            <table class="w-full text-right">
-                <thead class="bg-gray-100">
-                    <tr>
-                        <th class="p-4 border-b">אימייל</th>
-                        <th class="p-4 border-b">תפקיד</th>
-                        <th class="p-4 border-b">פעולות</th>
-                    </tr>
-                </thead>
-                <tbody id="users-table">
-                    </tbody>
-            </table>
-        </div>
-    </div>
-
+<body class="bg-gray-100">
     <script type="module">
-        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        // הגדרת Firebase...
-        // לוגיקה להצגת משתמשים ושינוי Role (Admin/User)
+        import { auth, db, injectNavbar, ADMIN_EMAIL } from './js/app.js';
+        import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        injectNavbar();
+
+        onAuthStateChanged(auth, (user) => {
+            if (!user || user.email !== ADMIN_EMAIL) {
+                alert("גישה למנהלים בלבד!");
+                window.location.href = 'index.html';
+            }
+        });
+
+        // כאן תוכל להוסיף טבלה שמושכת נתונים מאוסף "users" במידה ויצרת כזה בעת ההרשמה
+        const main = document.createElement('div');
+        main.className = "max-w-4xl mx-auto mt-10 p-6 bg-white shadow rounded";
+        main.innerHTML = `<h2 class="text-xl font-bold mb-4">ניהול הרשאות ומשתמשים</h2>
+                         <p class="text-gray-600">המנהל הנוכחי: <b>${ADMIN_EMAIL}</b></p>
+                         <hr class="my-4">
+                         <div id="userList">רשימת משתמשים תיטען כאן...</div>`;
+        document.body.appendChild(main);
     </script>
 </body>
 </html>
