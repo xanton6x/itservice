@@ -242,6 +242,39 @@
                             <button onclick="quickClose('${t.id}')" class="text-green-600 p-2"><i class="fas fa-check-circle text-lg"></i></button>
                             ${isManager ? `<button onclick="permanentDelete('${t.id}')" class="text-red-400 p-2"><i class="fas fa-trash-alt"></i></button>` : ''}
                         </div>
+                        // פונקציה לעדכון הסטטיסטיקה בעמוד הראשי
+function updateMainDashboardStats(tickets) {
+    const open = tickets.filter(t => t.status === 'חדש').length;
+    const inProgress = tickets.filter(t => t.status === 'בטיפול').length;
+    
+    // בדיקת חריגות SLA בזמן אמת
+    const overdue = tickets.filter(t => {
+        if (t.status === 'הושלם' || t.status === 'מבוטל') return false;
+        const limit = SLA_HOURS[t.priority] || 24;
+        const diffHours = (new Date() - new Date(t.createdAt)) / 3600000;
+        return diffHours > limit;
+    }).length;
+
+    // הושלמו היום (מחשב כמה נסגרו ב-24 שעות האחרונות)
+    const closedToday = tickets.filter(t => {
+        if (t.status !== 'הושלם' || !t.endTime) return false;
+        const isToday = new Date(t.endTime).toDateString() === new Date().toDateString();
+        return isToday;
+    }).length;
+
+    document.getElementById('main-stat-open').innerText = open;
+    document.getElementById('main-stat-overdue').innerText = overdue;
+    document.getElementById('main-stat-inprogress').innerText = inProgress;
+    document.getElementById('main-stat-closed-today').innerText = closedToday;
+}
+
+// עכשיו קרא לפונקציה הזו בתוך onSnapshot ב-loadTickets:
+onSnapshot(q, (snapshot) => {
+    allTickets = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    window.applyFilters();
+    updateMainDashboardStats(allTickets); // <--- השורה הזו מעדכנת את המונים
+    if(window.activeTicketId) updateModalUI();
+});
                     </div>`;
             });
         }
