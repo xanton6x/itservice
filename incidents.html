@@ -17,9 +17,22 @@
         .priority-high { border-right: 4px solid #ef4444; }
         .priority-critical { border-right: 4px solid #7f1d1d; animation: pulse 2s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } }
+        
+        /* עיצוב להתראה (Toast) */
+        #toast {
+            visibility: hidden; min-width: 250px; background-color: #333; color: #fff;
+            text-align: center; border-radius: 8px; padding: 16px; position: fixed;
+            z-index: 100; left: 30px; bottom: 30px; font-size: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
+        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+        @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
     </style>
 </head>
 <body class="bg-gray-100">
+
+    <div id="toast"><i class="fas fa-check-circle ml-2 text-green-400"></i> הקריאה עודכנה בהצלחה</div>
+
     <div class="max-w-6xl mx-auto p-6">
         
         <div class="flex flex-col md:flex-row justify-between items-center mb-6">
@@ -189,7 +202,7 @@
 
         window.quickAssign = async (id, tech) => { try { await updateDoc(doc(db, "tickets", id), { assignedTo: tech, status: tech ? "בטיפול" : "חדש" }); } catch(e) { alert(e.message); } };
         window.permanentDelete = async (id) => { if(confirm("למחוק לצמיתות?")) await deleteDoc(doc(db, "tickets", id)); };
-        window.quickClose = async (id) => { if(confirm("לסגור קריאה?")) await updateDoc(doc(db, "tickets", id), { status: "הושלם" }); };
+        window.quickClose = async (id) => { if(confirm("לסגור קריאה?")) { await updateDoc(doc(db, "tickets", id), { status: "הושלם" }); showToast(); } };
 
         window.openTicket = (id) => { window.activeTicketId = id; updateModalUI(); document.getElementById('ticketModal').classList.remove('hidden'); document.body.classList.add('modal-active'); };
         
@@ -206,7 +219,6 @@
             document.getElementById('modalPrioritySelect').innerHTML = ['נמוכה', 'בינונית', 'גבוהה', 'קריטי'].map(p => `<option value="${p}" ${t.priority === p ? 'selected' : ''}>${p}</option>`).join('');
             document.getElementById('modalTechSelect').innerHTML = `<option value="">שיוך...</option>` + techsList.map(tech => `<option value="${tech.email}" ${t.assignedTo === tech.email ? 'selected' : ''}>${tech.name}</option>`).join('');
 
-            // עדכון ה-Timeline - מה שבוצע בקריאה
             const timeline = document.getElementById('modalTimeline');
             if (t.comments && t.comments.length > 0) {
                 const sorted = [...t.comments].sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -218,23 +230,47 @@
             } else { timeline.innerHTML = '<p class="text-xs text-gray-400 italic">טרם בוצעו עדכונים.</p>'; }
         };
 
+        // הפונקציה המתוקנת למניעת קפיאה + התראה
         window.saveAllChanges = async () => {
+            if (!window.activeTicketId) return;
             const btn = document.getElementById('btnFullUpdate');
             const comment = document.getElementById('newComment').value.trim();
-            btn.disabled = true; btn.innerText = 'שומר...';
+            const ticketIdToUpdate = window.activeTicketId;
+            
+            // איסוף נתונים לפני סגירה
+            const updateData = {
+                status: document.getElementById('modalStatusSelect').value,
+                assignedTo: document.getElementById('modalTechSelect').value,
+                priority: document.getElementById('modalPrioritySelect').value
+            };
+            if (comment) updateData.comments = arrayUnion({ text: comment, userName: auth.currentUser.email, date: new Date().toISOString() });
+
+            // 1. שינוי UI וסגירה מיידית
+            btn.disabled = true;
+            btn.innerText = 'שומר...';
+            closeModal();
+
             try {
-                const updateData = {
-                    status: document.getElementById('modalStatusSelect').value,
-                    assignedTo: document.getElementById('modalTechSelect').value,
-                    priority: document.getElementById('modalPrioritySelect').value
-                };
-                if (comment) updateData.comments = arrayUnion({ text: comment, userName: auth.currentUser.email, date: new Date().toISOString() });
-                await updateDoc(doc(db, "tickets", window.activeTicketId), updateData);
-                closeModal();
-            } catch (e) { alert(e.message); btn.disabled = false; btn.innerText = 'עדכן'; }
+                // 2. שמירה ברקע
+                await updateDoc(doc(db, "tickets", ticketIdToUpdate), updateData);
+                showToast(); // הצגת התראת הצלחה
+            } catch (e) { 
+                alert("שגיאה בעדכון: " + e.message); 
+            }
         };
 
-        window.closeModal = () => { document.getElementById('ticketModal').classList.add('hidden'); document.body.classList.remove('modal-active'); window.activeTicketId = null; document.getElementById('newComment').value = ''; };
+        window.closeModal = () => { 
+            document.getElementById('ticketModal').classList.add('hidden'); 
+            document.body.classList.remove('modal-active'); 
+            window.activeTicketId = null; 
+            document.getElementById('newComment').value = ''; 
+        };
+
+        function showToast() {
+            const x = document.getElementById("toast");
+            x.className = "show";
+            setTimeout(() => { x.className = x.className.replace("show", ""); }, 3000);
+        }
 
         window.exportToExcel = () => {
             let csv = "\uFEFFמספר קריאה,לקוח,טלפון,נושא,סטטוס,טכנאי,דחיפות,תאריך\n";
