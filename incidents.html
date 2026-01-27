@@ -2,51 +2,119 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>ניהול קריאות</title>
+    <title>ניהול קריאות - IT System</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body class="bg-gray-50">
+<body class="bg-gray-50 pb-10">
+    <div class="max-w-6xl mx-auto p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-800">לוח קריאות שירות</h1>
+            <span id="ticketCount" class="bg-blue-600 text-white px-3 py-1 rounded-full text-sm">0 קריאות</span>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+            <table class="w-full text-right border-collapse">
+                <thead>
+                    <tr class="bg-slate-800 text-white">
+                        <th class="p-4 border-l border-slate-700">תאריך</th>
+                        <th class="p-4 border-l border-slate-700">נושא</th>
+                        <th class="p-4 border-l border-slate-700">משתמש</th>
+                        <th class="p-4 border-l border-slate-700">סטטוס</th>
+                        <th class="p-4 text-center">פעולות</th>
+                    </tr>
+                </thead>
+                <tbody id="tickets-list">
+                    <tr><td colspan="5" class="p-10 text-center text-gray-500 italic">טוען קריאות...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <script type="module">
         import { auth, db, injectNavbar, ADMIN_EMAIL } from './js/app.js';
-        import { collection, query, where, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { collection, query, where, onSnapshot, doc, updateDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         injectNavbar();
 
-        const container = document.createElement('div');
-        container.className = "max-w-5xl mx-auto p-4";
-        container.innerHTML = `<h1 class="text-2xl font-bold mb-4">רשימת קריאות שירות</h1><div id="list" class="space-y-4"></div>`;
-        document.body.appendChild(container);
-
         onAuthStateChanged(auth, (user) => {
-            if (!user) return window.location.href = 'login.html';
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
 
+            // הגדרת השאילתה: אנטון רואה הכל, משתמש רגיל רואה רק את השיוך שלו
             let q = query(collection(db, "tickets"), where("userId", "==", user.uid));
+            
             if (user.email === ADMIN_EMAIL) {
-                q = collection(db, "tickets"); // אנטון רואה הכל
+                q = query(collection(db, "tickets"), orderBy("createdAt", "desc"));
             }
 
             onSnapshot(q, (snapshot) => {
-                const listDiv = document.getElementById('list');
-                listDiv.innerHTML = '';
-                snapshot.forEach(ticketDoc => {
+                const list = document.getElementById('tickets-list');
+                document.getElementById('ticketCount').innerText = `${snapshot.size} קריאות`;
+                list.innerHTML = '';
+
+                if (snapshot.empty) {
+                    list.innerHTML = '<tr><td colspan="5" class="p-10 text-center">אין קריאות להצגה</td></tr>';
+                    return;
+                }
+
+                snapshot.forEach((ticketDoc) => {
                     const t = ticketDoc.data();
-                    const card = document.createElement('div');
-                    card.className = "bg-white p-4 rounded shadow border-r-4 " + (t.status === 'חדש' ? 'border-blue-500' : 'border-green-500');
-                    card.innerHTML = `
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <h3 class="font-bold text-lg">${t.title}</h3>
-                                <p class="text-gray-600">${t.description}</p>
-                                <small class="text-gray-400">נפתח ע"י: ${t.userEmail} | בתאריך: ${t.createdAt.split('T')[0]}</small>
-                            </div>
-                            <div class="text-left text-sm font-bold text-blue-600">${t.status}</div>
-                        </div>
+                    const id = ticketDoc.id; // מזהה המסמך לעדכון
+                    
+                    const tr = document.createElement('tr');
+                    tr.className = "border-b hover:bg-blue-50 transition";
+                    tr.innerHTML = `
+                        <td class="p-4 text-sm text-gray-600">${t.createdAt ? t.createdAt.split('T')[0] : 'N/A'}</td>
+                        <td class="p-4 font-bold text-gray-800">
+                            ${t.title}
+                            <div class="text-xs font-normal text-gray-500">${t.description}</div>
+                        </td>
+                        <td class="p-4 text-sm">${t.userEmail || 'אנונימי'}</td>
+                        <td class="p-4">
+                            <span class="px-3 py-1 rounded-full text-xs font-bold ${getStatusClass(t.status)}">
+                                ${t.status || 'חדש'}
+                            </span>
+                        </td>
+                        <td class="p-4 text-center">
+                            <select onchange="updateTicketStatus('${id}', this.value)" class="text-xs border rounded p-1 bg-white shadow-sm">
+                                <option value="" disabled selected>שנה סטטוס</option>
+                                <option value="חדש">חדש</option>
+                                <option value="בטיפול">בטיפול</option>
+                                <option value="הושלם">הושלם</option>
+                                <option value="מבוטל">מבוטל</option>
+                            </select>
+                        </td>
                     `;
-                    listDiv.appendChild(card);
+                    list.appendChild(tr);
                 });
             });
         });
+
+        // פונקציית עזר לצבעי סטטוס
+        function getStatusClass(status) {
+            switch(status) {
+                case 'חדש': return 'bg-blue-100 text-blue-700';
+                case 'בטיפול': return 'bg-orange-100 text-orange-700';
+                case 'הושלם': return 'bg-green-100 text-green-700';
+                case 'מבוטל': return 'bg-red-100 text-red-700';
+                default: return 'bg-gray-100 text-gray-700';
+            }
+        }
+
+        // פונקציית עדכון ב-Firebase
+        window.updateTicketStatus = async (ticketId, newStatus) => {
+            try {
+                const ticketRef = doc(db, "tickets", ticketId);
+                await updateDoc(ticketRef, { status: newStatus });
+                console.log("Status updated to:", newStatus);
+            } catch (error) {
+                alert("שגיאה בעדכון הסטטוס: " + error.message);
+            }
+        };
     </script>
 </body>
 </html>
