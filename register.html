@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>הרשמה למערכת IT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 flex items-center justify-center h-screen">
+    <div class="bg-white p-8 rounded-lg shadow-xl w-96">
+        <h1 class="text-2xl font-bold mb-6 text-center text-blue-600">יצירת חשבון חדש</h1>
+        <form id="registerForm" class="space-y-4">
+            <input type="text" id="fullName" placeholder="שם מלא" required class="w-full p-3 border rounded shadow-sm focus:ring-2 focus:ring-blue-500 outline-none">
+            <input type="email" id="email" placeholder="אימייל" required class="w-full p-3 border rounded shadow-sm focus:ring-2 focus:ring-blue-500 outline-none">
+            <input type="password" id="password" placeholder="סיסמה (לפחות 6 תווים)" required class="w-full p-3 border rounded shadow-sm focus:ring-2 focus:ring-blue-500 outline-none">
+            <button type="submit" class="w-full bg-green-600 text-white p-3 rounded font-bold hover:bg-green-700 transition">הירשם עכשיו</button>
+        </form>
+        <p class="mt-4 text-center text-sm">
+            כבר יש לך חשבון? <a href="login.html" class="text-blue-600 hover:underline">התחבר כאן</a>
+        </p>
+        <p id="msg" class="mt-4 text-center text-sm hidden"></p>
+    </div>
+
+    <script type="module">
+        import { auth, db } from './js/app.js';
+        import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        document.getElementById('registerForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('password').value;
+            const name = document.getElementById('fullName').value;
+            const msg = document.getElementById('msg');
+
+            try {
+                // 1. יצירת המשתמש ב-Auth
+                const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+                const user = userCredential.user;
+
+                // 2. שמירת פרטי המשתמש ב-Firestore (כדי שאנטון יראה אותו)
+                await setDoc(doc(db, "users", user.uid), {
+                    displayName: name,
+                    email: email,
+                    role: "user", // ברירת מחדל
+                    createdAt: new Date().toISOString()
+                });
+
+                msg.innerText = "נרשמת בהצלחה! מעביר לדף הבית...";
+                msg.className = "mt-4 text-center text-sm text-green-600";
+                msg.classList.remove('hidden');
+
+                setTimeout(() => window.location.href = 'index.html', 2000);
+            } catch (error) {
+                msg.innerText = "שגיאה: " + error.message;
+                msg.className = "mt-4 text-center text-sm text-red-600";
+                msg.classList.remove('hidden');
+            }
+        };
+    </script>
+</body>
+</html>

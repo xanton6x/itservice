@@ -2,31 +2,119 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>ניהול משתמשים</title>
+    <title>ניהול קריאות - IT System</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-50 pb-10">
+    <div class="max-w-6xl mx-auto p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-800">לוח קריאות שירות</h1>
+            <span id="ticketCount" class="bg-blue-600 text-white px-3 py-1 rounded-full text-sm">0 קריאות</span>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+            <table class="w-full text-right border-collapse">
+                <thead>
+                    <tr class="bg-slate-800 text-white">
+                        <th class="p-4 border-l border-slate-700">תאריך</th>
+                        <th class="p-4 border-l border-slate-700">נושא</th>
+                        <th class="p-4 border-l border-slate-700">משתמש</th>
+                        <th class="p-4 border-l border-slate-700">סטטוס</th>
+                        <th class="p-4 text-center">פעולות</th>
+                    </tr>
+                </thead>
+                <tbody id="tickets-list">
+                    <tr><td colspan="5" class="p-10 text-center text-gray-500 italic">טוען קריאות...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <script type="module">
         import { auth, db, injectNavbar, ADMIN_EMAIL } from './js/app.js';
-        import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { collection, query, where, onSnapshot, doc, updateDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         injectNavbar();
 
         onAuthStateChanged(auth, (user) => {
-            if (!user || user.email !== ADMIN_EMAIL) {
-                alert("גישה למנהלים בלבד!");
-                window.location.href = 'index.html';
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
             }
+
+            // הגדרת השאילתה: אנטון רואה הכל, משתמש רגיל רואה רק את השיוך שלו
+            let q = query(collection(db, "tickets"), where("userId", "==", user.uid));
+            
+            if (user.email === ADMIN_EMAIL) {
+                q = query(collection(db, "tickets"), orderBy("createdAt", "desc"));
+            }
+
+            onSnapshot(q, (snapshot) => {
+                const list = document.getElementById('tickets-list');
+                document.getElementById('ticketCount').innerText = `${snapshot.size} קריאות`;
+                list.innerHTML = '';
+
+                if (snapshot.empty) {
+                    list.innerHTML = '<tr><td colspan="5" class="p-10 text-center">אין קריאות להצגה</td></tr>';
+                    return;
+                }
+
+                snapshot.forEach((ticketDoc) => {
+                    const t = ticketDoc.data();
+                    const id = ticketDoc.id; // מזהה המסמך לעדכון
+                    
+                    const tr = document.createElement('tr');
+                    tr.className = "border-b hover:bg-blue-50 transition";
+                    tr.innerHTML = `
+                        <td class="p-4 text-sm text-gray-600">${t.createdAt ? t.createdAt.split('T')[0] : 'N/A'}</td>
+                        <td class="p-4 font-bold text-gray-800">
+                            ${t.title}
+                            <div class="text-xs font-normal text-gray-500">${t.description}</div>
+                        </td>
+                        <td class="p-4 text-sm">${t.userEmail || 'אנונימי'}</td>
+                        <td class="p-4">
+                            <span class="px-3 py-1 rounded-full text-xs font-bold ${getStatusClass(t.status)}">
+                                ${t.status || 'חדש'}
+                            </span>
+                        </td>
+                        <td class="p-4 text-center">
+                            <select onchange="updateTicketStatus('${id}', this.value)" class="text-xs border rounded p-1 bg-white shadow-sm">
+                                <option value="" disabled selected>שנה סטטוס</option>
+                                <option value="חדש">חדש</option>
+                                <option value="בטיפול">בטיפול</option>
+                                <option value="הושלם">הושלם</option>
+                                <option value="מבוטל">מבוטל</option>
+                            </select>
+                        </td>
+                    `;
+                    list.appendChild(tr);
+                });
+            });
         });
 
-        // כאן תוכל להוסיף טבלה שמושכת נתונים מאוסף "users" במידה ויצרת כזה בעת ההרשמה
-        const main = document.createElement('div');
-        main.className = "max-w-4xl mx-auto mt-10 p-6 bg-white shadow rounded";
-        main.innerHTML = `<h2 class="text-xl font-bold mb-4">ניהול הרשאות ומשתמשים</h2>
-                         <p class="text-gray-600">המנהל הנוכחי: <b>${ADMIN_EMAIL}</b></p>
-                         <hr class="my-4">
-                         <div id="userList">רשימת משתמשים תיטען כאן...</div>`;
-        document.body.appendChild(main);
+        // פונקציית עזר לצבעי סטטוס
+        function getStatusClass(status) {
+            switch(status) {
+                case 'חדש': return 'bg-blue-100 text-blue-700';
+                case 'בטיפול': return 'bg-orange-100 text-orange-700';
+                case 'הושלם': return 'bg-green-100 text-green-700';
+                case 'מבוטל': return 'bg-red-100 text-red-700';
+                default: return 'bg-gray-100 text-gray-700';
+            }
+        }
+
+        // פונקציית עדכון ב-Firebase
+        window.updateTicketStatus = async (ticketId, newStatus) => {
+            try {
+                const ticketRef = doc(db, "tickets", ticketId);
+                await updateDoc(ticketRef, { status: newStatus });
+                console.log("Status updated to:", newStatus);
+            } catch (error) {
+                alert("שגיאה בעדכון הסטטוס: " + error.message);
+            }
+        };
     </script>
 </body>
 </html>
