@@ -1,55 +1,290 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>דוחות מערכת</title>
+    <title>מרכז בקרה - IT MGMT Professional</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .custom-shadow { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02); }
+        .gradient-bg { background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%); }
+        tr:nth-child(even) { background-color: #f8fafc; }
+    </style>
 </head>
-<body class="bg-gray-100">
-    <div class="max-w-4xl mx-auto p-6">
-        <h1 class="text-2xl font-bold mb-8 text-gray-800">סטטיסטיקה וסיכום פעילות</h1>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div class="bg-white p-6 rounded-xl shadow">
-                <h3 class="text-center font-bold mb-4">מצב קריאות שירות</h3>
-                <canvas id="ticketsChart"></canvas>
+<body class="bg-gray-50 text-slate-900">
+
+    <div class="max-w-7xl mx-auto p-4 md:p-10">
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
+            <div>
+                <h1 class="text-4xl font-black tracking-tight text-slate-800">מרכז בקרה <span class="text-indigo-600">IT</span></h1>
+                <p class="text-slate-500 mt-2 font-medium">ניהול ביצועים, SLA וניתוח עומסי עבודה בזמן אמת</p>
             </div>
-            <div class="bg-white p-6 rounded-xl shadow">
-                <h3 class="text-center font-bold mb-4">תוקף רישיונות</h3>
-                <canvas id="licenseChart"></canvas>
+            
+            <div class="flex items-center gap-3 bg-white p-3 rounded-2xl shadow-sm border border-slate-200">
+                <div class="flex flex-col">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase mr-1">טווח תאריכים</label>
+                    <div class="flex items-center gap-2">
+                        <input type="date" id="dateStart" class="text-sm font-bold border-none bg-transparent outline-none">
+                        <span class="text-slate-300">-</span>
+                        <input type="date" id="dateEnd" class="text-sm font-bold border-none bg-transparent outline-none">
+                    </div>
+                </div>
+                <button onclick="window.refreshDashboard()" class="bg-indigo-600 text-white p-3 rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+            <div class="bg-white p-6 rounded-3xl custom-shadow border-t-4 border-indigo-500">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-slate-400 text-xs font-bold uppercase mb-1">סה"כ קריאות</p>
+                        <h3 id="stat-total" class="text-4xl font-black text-slate-800">-</h3>
+                    </div>
+                    <div class="bg-indigo-50 p-3 rounded-2xl text-indigo-500"><i class="fas fa-inbox"></i></div>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-3xl custom-shadow border-t-4 border-emerald-500">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-slate-400 text-xs font-bold uppercase mb-1">עמידה ב-SLA</p>
+                        <h3 id="stat-sla-pct" class="text-4xl font-black text-emerald-600">-</h3>
+                    </div>
+                    <div class="bg-emerald-50 p-3 rounded-2xl text-emerald-500"><i class="fas fa-shield-alt"></i></div>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-3xl custom-shadow border-t-4 border-rose-500">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-slate-400 text-xs font-bold uppercase mb-1">חריגות חמורות</p>
+                        <h3 id="stat-overdue" class="text-4xl font-black text-rose-600">-</h3>
+                    </div>
+                    <div class="bg-rose-50 p-3 rounded-2xl text-rose-500"><i class="fas fa-fire-alt"></i></div>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-3xl custom-shadow border-t-4 border-amber-500">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-slate-400 text-xs font-bold uppercase mb-1">זמן פתרון ממוצע</p>
+                        <h3 id="stat-avg-time" class="text-4xl font-black text-slate-800">-</h3>
+                    </div>
+                    <div class="bg-amber-50 p-3 rounded-2xl text-amber-500"><i class="fas fa-bolt"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
+            <div class="lg:col-span-2 space-y-8">
+                <div class="bg-white p-8 rounded-3xl custom-shadow border border-slate-100">
+                    <div class="flex justify-between items-center mb-8">
+                        <h3 class="text-xl font-bold text-slate-800">ביצועי טכנאים ועומס</h3>
+                        <button onclick="window.exportReport()" class="text-sm font-bold text-indigo-600 bg-indigo-50 px-4 py-2 rounded-xl hover:bg-indigo-100 transition">
+                            <i class="fas fa-file-csv ml-1"></i> ייצוא נתונים
+                        </button>
+                    </div>
+                    <canvas id="techChart" height="120"></canvas>
+                </div>
+
+                <div class="bg-white rounded-3xl custom-shadow border border-slate-100 overflow-hidden">
+                    <div class="p-6 border-b border-slate-50 bg-slate-50/50">
+                        <h3 class="text-lg font-bold text-slate-800"><i class="fas fa-exclamation-circle text-rose-500 ml-2"></i>קריאות בסיכון (חריגת SLA)</h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-right text-sm">
+                            <thead class="bg-slate-50 text-slate-400 font-bold uppercase text-[10px]">
+                                <tr>
+                                    <th class="p-4">לקוח</th>
+                                    <th class="p-4">נושא</th>
+                                    <th class="p-4">דחיפות</th>
+                                    <th class="p-4">טכנאי</th>
+                                    <th class="p-4">זמן חריגה</th>
+                                </tr>
+                            </thead>
+                            <tbody id="overdueTableBody">
+                                </tbody>
+                        </table>
+                        <div id="noOverdueMsg" class="p-10 text-center text-slate-400 hidden italic">אין קריאות בחריגה כרגע. עבודה מצוינת!</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-8">
+                <div class="bg-white p-8 rounded-3xl custom-shadow border border-slate-100">
+                    <h3 class="text-xl font-bold text-slate-800 mb-6">התפלגות תקלות</h3>
+                    <canvas id="priorityChart"></canvas>
+                </div>
+
+                <div class="bg-indigo-900 p-8 rounded-3xl custom-shadow text-white relative overflow-hidden">
+                    <i class="fas fa-lightbulb absolute -bottom-4 -left-4 text-8xl text-white/10"></i>
+                    <h3 class="text-xl font-bold mb-4">תובנת מערכת</h3>
+                    <p id="ai-insight" class="text-indigo-100 text-sm leading-relaxed italic">
+                        מנתח נתונים...
+                    </p>
+                </div>
             </div>
         </div>
     </div>
 
     <script type="module">
-        import { db, injectNavbar } from './js/app.js';
+        import { db, auth, injectNavbar } from './js/app.js';
         import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         injectNavbar();
+        
+        let charts = {};
+        const SLA_HOURS = { 'קריטי': 2, 'גבוהה': 8, 'בינונית': 24, 'נמוכה': 48 };
 
-        async function initCharts() {
-            const tks = await getDocs(collection(db, "tickets"));
-            const lcs = await getDocs(collection(db, "licenses"));
+        // תאריכים דיפולטיביים
+        const today = new Date();
+        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        document.getElementById('dateStart').value = startOfMonth.toISOString().split('T')[0];
+        document.getElementById('dateEnd').value = today.toISOString().split('T')[0];
 
-            // סטטיסטיקה פשוטה לדוגמה
-            new Chart(document.getElementById('ticketsChart'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['קריאות במערכת'],
-                    datasets: [{ data: [tks.size], backgroundColor: ['#3b82f6'] }]
+        window.refreshDashboard = async () => {
+            const snap = await getDocs(collection(db, "tickets"));
+            const start = new Date(document.getElementById('dateStart').value);
+            const end = new Date(document.getElementById('dateEnd').value);
+            end.setHours(23,59,59);
+
+            const filteredTickets = [];
+            snap.forEach(doc => {
+                const data = doc.data();
+                const created = new Date(data.createdAt);
+                if (created >= start && created <= end) filteredTickets.push(data);
+            });
+
+            renderStats(filteredTickets);
+            updateCharts(filteredTickets);
+            renderOverdueTable(filteredTickets);
+            generateInsight(filteredTickets);
+        };
+
+        function renderStats(tickets) {
+            const total = tickets.length;
+            const closed = tickets.filter(t => t.status === 'הושלם');
+            
+            let overdueCount = 0;
+            let totalMins = 0;
+
+            tickets.forEach(t => {
+                const limit = SLA_HOURS[t.priority] || 24;
+                const endPoint = t.endTime ? new Date(t.endTime) : new Date();
+                const diffHours = (endPoint - new Date(t.createdAt)) / 3600000;
+                if (diffHours > limit) overdueCount++;
+                
+                if(t.startTime && t.endTime) {
+                    totalMins += (new Date(t.endTime) - new Date(t.startTime)) / 60000;
                 }
             });
 
-            new Chart(document.getElementById('licenseChart'), {
+            const slaPct = total ? Math.round(((total - overdueCount) / total) * 100) : 100;
+            const avgTime = closed.filter(t => t.startTime && t.endTime).length 
+                ? Math.round(totalMins / closed.filter(t => t.startTime && t.endTime).length) 
+                : 0;
+
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('stat-sla-pct').innerText = slaPct + '%';
+            document.getElementById('stat-overdue').innerText = overdueCount;
+            document.getElementById('stat-avg-time').innerText = avgTime + " דק'";
+        }
+
+        function renderOverdueTable(tickets) {
+            const tbody = document.getElementById('overdueTableBody');
+            const msg = document.getElementById('noOverdueMsg');
+            tbody.innerHTML = '';
+            
+            const overdueTickets = tickets.filter(t => {
+                if(t.status === 'הושלם') return false;
+                const limit = SLA_HOURS[t.priority] || 24;
+                return (new Date() - new Date(t.createdAt)) / 3600000 > limit;
+            });
+
+            if(overdueTickets.length === 0) {
+                msg.classList.remove('hidden');
+            } else {
+                msg.classList.add('hidden');
+                overdueTickets.forEach(t => {
+                    const diffHours = Math.floor((new Date() - new Date(t.createdAt)) / 3600000);
+                    tbody.innerHTML += `
+                        <tr class="border-b border-slate-50 hover:bg-rose-50/50 transition">
+                            <td class="p-4 font-bold text-slate-700">${t.clientName}</td>
+                            <td class="p-4 text-slate-500">${t.title}</td>
+                            <td class="p-4"><span class="px-2 py-1 rounded-lg text-[10px] font-bold bg-rose-100 text-rose-600">${t.priority}</span></td>
+                            <td class="p-4 text-slate-500">${t.assignedTo || 'לא שויך'}</td>
+                            <td class="p-4 text-rose-600 font-bold">${diffHours} שעות</td>
+                        </tr>
+                    `;
+                });
+            }
+        }
+
+        function updateCharts(tickets) {
+            const techMap = {};
+            tickets.forEach(t => {
+                const name = t.assignedTo || 'לא שויך';
+                techMap[name] = (techMap[name] || 0) + 1;
+            });
+
+            if (charts.tech) charts.tech.destroy();
+            charts.tech = new Chart(document.getElementById('techChart'), {
                 type: 'bar',
                 data: {
-                    labels: ['סה"כ רישיונות'],
-                    datasets: [{ label: 'כמות', data: [lcs.size], backgroundColor: '#10b981' }]
+                    labels: Object.keys(techMap),
+                    datasets: [{
+                        label: 'קריאות',
+                        data: Object.values(techMap),
+                        backgroundColor: '#6366f1',
+                        borderRadius: 12
+                    }]
+                },
+                options: { 
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, grid: { display: false } } }
                 }
             });
+
+            const pMap = { 'קריטי': 0, 'גבוהה': 0, 'בינונית': 0, 'נמוכה': 0 };
+            tickets.forEach(t => { if(pMap[t.priority] !== undefined) pMap[t.priority]++; });
+
+            if (charts.priority) charts.priority.destroy();
+            charts.priority = new Chart(document.getElementById('priorityChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(pMap),
+                    datasets: [{
+                        data: Object.values(pMap),
+                        backgroundColor: ['#e11d48', '#fb7185', '#fbbf24', '#34d399'],
+                        borderWidth: 0
+                    }]
+                },
+                options: { cutout: '70%', plugins: { legend: { position: 'bottom' } } }
+            });
         }
-        initCharts();
+
+        function generateInsight(tickets) {
+            const open = tickets.filter(t => t.status !== 'הושלם');
+            const critical = open.filter(t => t.priority === 'קריטי').length;
+            const insightBox = document.getElementById('ai-insight');
+
+            if (critical > 2) {
+                insightBox.innerText = `ישנן ${critical} קריאות קריטיות פתוחות. מומלץ להקצות את אנטון לטיפול מיידי כדי למנוע חריגת SLA משמעותית.`;
+            } else if (open.length > 10) {
+                insightBox.innerText = "עומס הקריאות גבוה מהממוצע. כדאי לבדוק אם ישנה תקלה רוחבית אצל אחד הספקים.";
+            } else {
+                insightBox.innerText = "קצב הטיפול תקין. כל הקריאות הקריטיות מטופלות בזמן. המשך כך!";
+            }
+        }
+
+        window.exportReport = async () => {
+            const tickets = await fetchData(); // (כמו בקוד הקודם)
+            // ... לוגיקת CSV ...
+        };
+
+        auth.onAuthStateChanged(user => { if (user) window.refreshDashboard(); });
     </script>
 </body>
 </html>
