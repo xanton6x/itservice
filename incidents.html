@@ -4,6 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ניהול קריאות - מערכת IT</title>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white p-4 rounded-xl shadow-sm border-r-4 border-indigo-500">
+        <p class="text-slate-400 text-[10px] font-bold uppercase">פתוחות</p>
+        <h3 id="main-stat-open" class="text-2xl font-black text-slate-800">-</h3>
+    </div>
+    <div class="bg-white p-4 rounded-xl shadow-sm border-r-4 border-red-500">
+        <p class="text-slate-400 text-[10px] font-bold uppercase">חריגות SLA</p>
+        <h3 id="main-stat-overdue" class="text-2xl font-black text-red-600">-</h3>
+    </div>
+    <div class="bg-white p-4 rounded-xl shadow-sm border-r-4 border-amber-500">
+        <p class="text-slate-400 text-[10px] font-bold uppercase">בטיפול</p>
+        <h3 id="main-stat-inprogress" class="text-2xl font-black text-slate-800">-</h3>
+    </div>
+    <div class="bg-white p-4 rounded-xl shadow-sm border-r-4 border-green-500">
+        <p class="text-slate-400 text-[10px] font-bold uppercase">הושלמו היום</p>
+        <h3 id="main-stat-closed-today" class="text-2xl font-black text-slate-800">-</h3>
+    </div>
+</div>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
