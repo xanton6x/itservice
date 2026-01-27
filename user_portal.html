@@ -2,48 +2,86 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>פתיחת קריאה</title>
+    <title>פתיחת קריאה חדשה</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100">
-    <div class="max-w-2xl mx-auto p-6 bg-white shadow-lg rounded-lg mt-10">
-        <h2 class="text-2xl font-bold mb-6 border-b pb-2">פתח קריאת שירות חדשה</h2>
-        <form id="ticketForm" class="space-y-4">
-            <div>
-                <label class="block font-medium">נושא הקריאה</label>
-                <input type="text" id="title" required class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500">
-            </div>
-            <div>
-                <label class="block font-medium">תיאור התקלה</label>
-                <textarea id="desc" required class="w-full border p-2 rounded h-32 focus:ring-2 focus:ring-blue-500"></textarea>
-            </div>
-            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded font-bold hover:bg-blue-700">שלח קריאה</button>
-        </form>
+<body class="bg-gray-50">
+    <div class="max-w-2xl mx-auto p-6">
+        <div class="bg-white p-8 rounded-xl shadow-lg border-t-4 border-blue-600">
+            <h1 class="text-2xl font-bold mb-6 text-gray-800">דווח על תקלה חדשה</h1>
+            
+            <form id="ticketForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">שם הלקוח / חברה</label>
+                    <input type="text" id="clientName" required class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">מספר טלפון לחזרה</label>
+                        <input type="tel" id="phone" required class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">סוג התקלה</label>
+                        <select id="issueType" required class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="">בחר סוג...</option>
+                            <option value="חומרה">חומרה (מחשב, מסך, מדפסת)</option>
+                            <option value="תוכנה">תוכנה / אפליקציה</option>
+                            <option value="רשת">רשת ואינטרנט</option>
+                            <option value="אבטחה">אבטחת מידע / וירוס</option>
+                            <option value="אחר">אחר</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1">נושא הקריאה (קצר)</label>
+                    <input type="text" id="title" required class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1">תיאור חופשי של התקלה</label>
+                    <textarea id="description" rows="4" required class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none" placeholder="פרט כאן כמה שיותר על הבעיה..."></textarea>
+                </div>
+
+                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded hover:bg-blue-700 transition shadow-md">שלח קריאה</button>
+            </form>
+            <p id="successMsg" class="mt-4 text-center text-green-600 font-bold hidden">הקריאה נשלחה בהצלחה!</p>
+        </div>
     </div>
 
     <script type="module">
         import { auth, db, injectNavbar } from './js/app.js';
         import { collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        
+
         injectNavbar();
 
         document.getElementById('ticketForm').onsubmit = async (e) => {
             e.preventDefault();
             const user = auth.currentUser;
-            if (!user) return alert("עליך להתחבר מחדש");
+            if (!user) return alert("עליך להיות מחובר");
+
+            const ticketData = {
+                clientName: document.getElementById('clientName').value,
+                phone: document.getElementById('phone').value,
+                issueType: document.getElementById('issueType').value,
+                title: document.getElementById('title').value,
+                description: document.getElementById('description').value,
+                status: "חדש",
+                userId: user.uid,
+                userEmail: user.email,
+                assignedTo: "", // טרם שובץ
+                createdAt: new Date().toISOString()
+            };
 
             try {
-                await addDoc(collection(db, "tickets"), {
-                    title: document.getElementById('title').value,
-                    description: document.getElementById('desc').value,
-                    status: "חדש",
-                    userId: user.uid,
-                    userEmail: user.email,
-                    createdAt: new Date().toISOString()
-                });
-                alert("הקריאה נפתחה בהצלחה!");
-                e.target.reset();
-            } catch (err) { alert("שגיאה: " + err.message); }
+                await addDoc(collection(db, "tickets"), ticketData);
+                document.getElementById('ticketForm').reset();
+                document.getElementById('successMsg').classList.remove('hidden');
+                setTimeout(() => window.location.href = 'incidents.html', 2000);
+            } catch (error) {
+                alert("שגיאה בשליחה: " + error.message);
+            }
         };
     </script>
 </body>
