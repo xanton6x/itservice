@@ -4,27 +4,52 @@
     <meta charset="UTF-8">
     <title>התחברות למערכת IT</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body class="bg-slate-900 flex items-center justify-center h-screen">
-    <div class="bg-white p-8 rounded-lg shadow-xl w-96">
-        <h1 class="text-2xl font-bold mb-6 text-center text-blue-600">כניסה למערכת</h1>
-        <div id="loginForm" class="space-y-4">
-            <input type="email" id="email" placeholder="אימייל" class="w-full p-3 border rounded shadow-sm focus:ring-2 focus:ring-blue-500 outline-none">
-            <input type="password" id="password" placeholder="סיסמה" class="w-full p-3 border rounded shadow-sm focus:ring-2 focus:ring-blue-500 outline-none">
-            <button id="loginBtn" class="w-full bg-blue-600 text-white p-3 rounded font-bold hover:bg-blue-700 transition">התחבר</button>
-            <p id="errorMsg" class="text-red-500 text-sm text-center hidden"></p>
+    
+    <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md mx-4">
+        <div class="text-center mb-8">
+            <div class="bg-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <i class="fas fa-lock text-white text-2xl"></i>
+            </div>
+            <h1 class="text-3xl font-extrabold text-slate-800">ברוכים הבאים</h1>
+            <p class="text-slate-500 mt-2">התחבר כדי לנהל את קריאות השירות שלך</p>
         </div>
-        <p class="mt-6 text-sm text-center text-gray-500">
-            אין לך חשבון? צור קשר עם המנהל <br> <span class="font-bold">anton@rcc.co.il</span>
-        </p>
+
+        <div id="loginForm" class="space-y-5">
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">כתובת אימייל</label>
+                <input type="email" id="email" placeholder="name@company.com" 
+                       class="w-full p-3 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">סיסמה</label>
+                <input type="password" id="password" placeholder="••••••••" 
+                       class="w-full p-3 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+            </div>
+
+            <button id="loginBtn" class="w-full bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700 transform active:scale-95 transition shadow-lg">
+                התחברות
+            </button>
+            
+            <p id="errorMsg" class="text-red-500 text-sm text-center hidden font-medium"></p>
+        </div>
+
+        <div class="mt-8 pt-6 border-t border-slate-100 text-center">
+            <p class="text-slate-600">אין לך חשבון עדיין?</p>
+            <a href="register.html" class="inline-block mt-2 text-blue-600 font-bold hover:text-blue-800 hover:underline transition">
+                צור חשבון חדש עכשיו
+            </a>
+        </div>
     </div>
 
     <script type="module">
-        // מייבאים את האובייקטים מהקובץ המרכזי שקיים אצלך
         import { auth } from './js/app.js';
         import { signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        // אם המשתמש כבר מחובר, שלח אותו ישר לדף הבית
+        // העברה אוטומטית אם כבר מחובר
         onAuthStateChanged(auth, (user) => {
             if (user) window.location.href = 'index.html';
         });
@@ -34,13 +59,19 @@
             const pass = document.getElementById('password').value;
             const errorElement = document.getElementById('errorMsg');
 
+            if (!email || !pass) {
+                errorElement.innerText = "נא למלא את כל השדות";
+                errorElement.classList.remove('hidden');
+                return;
+            }
+
             try {
+                errorElement.classList.add('hidden');
                 await signInWithEmailAndPassword(auth, email, pass);
                 window.location.href = 'index.html';
             } catch (error) {
-                errorElement.innerText = "שגיאה: אימייל או סיסמה שגויים";
+                errorElement.innerText = "אימייל או סיסמה אינם נכונים";
                 errorElement.classList.remove('hidden');
-                console.error(error.message);
             }
         };
     </script>
