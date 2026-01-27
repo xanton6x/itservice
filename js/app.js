@@ -1,114 +1,110 @@
-// פונקציה להזרקת התפריט לכל דף באופן אוטומטי
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCkmi_WVVGk6PvIGoh8FEzXOyzzDN2jJqA",
+  authDomain: "itservice-ef2cb.firebaseapp.com",
+  projectId: "itservice-ef2cb",
+  storageBucket: "itservice-ef2cb.firebasestorage.app",
+  messagingSenderId: "585535831360",
+  appId: "1:585535831360:web:8b84f53b6892a2fc490ea5"
+};
+
+const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+export const ADMIN_PRIMARY = "anton@rcc.co.il";
+
 export function injectNavbar() {
-    const user = auth.currentUser;
-    // הגדרת המנהל הראשי (נשלף מהזיכרון שלנו)
-    const ADMIN_PRIMARY = 'anton@rcc.co.il'; 
-    const isAdmin = user && user.email === ADMIN_PRIMARY;
-
-    const navHtml = `
-    <nav class="bg-slate-900 text-white shadow-xl mb-6 sticky top-0 z-[100]">
-        <div class="max-w-6xl mx-auto px-4">
-            <div class="flex justify-between items-center h-16">
-                
-                <div class="flex items-center gap-3">
-                    <div class="bg-blue-600 p-2 rounded-lg shadow-inner">
-                        <i class="fas fa-tools text-white text-xl"></i>
-                    </div>
-                    <div class="flex flex-col">
-                        <span class="font-black text-lg leading-none tracking-tight">RCC <span class="text-blue-400">IT</span></span>
-                        <span class="text-[10px] text-slate-400 font-medium">${user ? user.email : 'אורח'}</span>
-                    </div>
-                </div>
-
-                <div class="hidden md:flex items-center gap-8 font-bold text-sm">
-                    <a href="dashboard.html" class="flex items-center gap-2 hover:text-blue-400 transition-colors group">
-                        <i class="fas fa-list-ul text-slate-400 group-hover:text-blue-400"></i>
-                        קריאות שירות
-                    </a>
-                    
-                    ${isAdmin ? `
-                    <a href="users.html" class="flex items-center gap-2 hover:text-blue-400 transition-colors group">
-                        <i class="fas fa-users-cog text-slate-400 group-hover:text-blue-400"></i>
-                        ניהול משתמשים
-                    </a>
-                    ` : ''}
-
-                    <div class="h-6 w-[1px] bg-slate-700 mx-2"></div>
-
-                    <button onclick="handleLogout()" class="text-slate-400 hover:text-red-400 transition-colors flex items-center gap-2">
-                        <span>יציאה</span>
-                        <i class="fas fa-power-off"></i>
-                    </button>
-                </div>
-
-                <div class="md:hidden flex items-center">
-                    <button id="mobile-menu-button" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors">
-                        <i class="fas fa-bars text-xl" id="menu-icon"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <div id="mobile-menu" class="hidden md:hidden bg-slate-800 border-t border-slate-700 animate-fade-in-down">
-            <div class="px-4 py-6 space-y-4 shadow-2xl">
-                <a href="dashboard.html" class="flex items-center gap-4 py-3 px-4 bg-slate-700/50 rounded-xl hover:bg-slate-700">
-                    <i class="fas fa-list-ul text-blue-400 w-5"></i>
-                    <span class="font-bold">קריאות שירות</span>
-                </a>
-
-                ${isAdmin ? `
-                <a href="users.html" class="flex items-center gap-4 py-3 px-4 bg-slate-700/50 rounded-xl hover:bg-slate-700">
-                    <i class="fas fa-users-cog text-purple-400 w-5"></i>
-                    <span class="font-bold">ניהול משתמשים</span>
-                </a>
-                ` : ''}
-
-                <button onclick="handleLogout()" class="w-full flex items-center gap-4 py-4 px-4 text-red-400 font-bold border-t border-slate-700 mt-4">
-                    <i class="fas fa-power-off w-5"></i>
-                    <span>התנתקות מהמערכת</span>
-                </button>
-            </div>
-        </div>
-    </nav>
-    <style>
-        @keyframes fade-in-down {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in-down { animation: fade-in-down 0.2s ease-out; }
-    </style>
-    `;
-
-    // הזרקה לתחילת ה-body
-    document.body.insertAdjacentHTML('afterbegin', navHtml);
-
-    // לוגיקה לפתיחה וסגירה של ההמבורגר
-    const menuBtn = document.getElementById('mobile-menu-button');
-    const mobileMenu = document.getElementById('mobile-menu');
-    const menuIcon = document.getElementById('menu-icon');
-
-    if (menuBtn && mobileMenu) {
-        menuBtn.addEventListener('click', () => {
-            const isHidden = mobileMenu.classList.contains('hidden');
-            if (isHidden) {
-                mobileMenu.classList.remove('hidden');
-                menuIcon.classList.replace('fa-bars', 'fa-times');
-            } else {
-                mobileMenu.classList.add('hidden');
-                menuIcon.classList.replace('fa-times', 'fa-bars');
+    onAuthStateChanged(auth, async (user) => {
+        if (!user) {
+            if (!window.location.pathname.includes('login.html') && !window.location.pathname.includes('register.html')) {
+                window.location.href = 'login.html';
             }
-        });
-    }
+            return;
+        }
+
+        let role = 'user';
+        let isAdmin = (user.email === ADMIN_PRIMARY);
+
+        try {
+            const userDoc = await getDoc(doc(db, "users", user.email)); // שים לב: בדרך כלל משתמשים ב-email כ-ID אם כך שמרת, או user.uid
+            if (userDoc.exists()) {
+                role = userDoc.data().role;
+                if (role === 'admin') isAdmin = true;
+            }
+        } catch (e) { console.warn("Error fetching role"); }
+
+        // בניית הלינקים
+        let links = `
+            <a href="index.html" class="block md:inline-block hover:text-blue-300 py-2 md:py-0 md:ml-5 font-medium">בית</a>
+            <a href="incidents.html" class="block md:inline-block hover:text-blue-300 py-2 md:py-0 md:ml-5 font-medium">קריאות</a>
+        `;
+        if (isAdmin) {
+            links += `
+                <a href="admin_users.html" class="block md:inline-block text-orange-400 font-bold py-2 md:py-0 md:ml-5">ניהול משתמשים</a>
+                <a href="eset_licenses.html" class="block md:inline-block hover:text-blue-300 py-2 md:py-0 md:ml-5 font-medium">רישיונות</a>
+            `;
+        }
+        if (isAdmin || role === 'tech') {
+            links += `<a href="report.html" class="block md:inline-block hover:text-blue-300 py-2 md:py-0 md:ml-5 font-medium">דוחות</a>`;
+        }
+
+        // יצירת ה-HTML של ה-Navbar
+        const navContainer = document.createElement('div');
+        navContainer.innerHTML = `
+        <nav class="bg-slate-900 text-white shadow-xl sticky top-0 z-[100]" dir="rtl">
+            <div class="max-w-7xl mx-auto px-4 md:px-8">
+                <div class="flex justify-between items-center h-16">
+                    <div class="flex items-center">
+                        <div class="font-black text-xl text-blue-400 ml-6 md:ml-8 border-l border-slate-700 pl-4 uppercase tracking-wider">IT Mgmt</div>
+                        <div class="hidden md:flex items-center">${links}</div>
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                        <span class="text-xs text-slate-400 hidden lg:block">${user.email}</span>
+                        <button onclick="window.handleLogout()" class="hidden md:block bg-red-600/80 px-4 py-1.5 rounded-lg text-sm hover:bg-red-700 transition font-bold">ניתוק</button>
+                        
+                        <button onclick="window.toggleMobileMenu()" class="md:hidden p-2 rounded-lg hover:bg-slate-800 transition">
+                            <i class="fas fa-bars text-xl" id="menu-icon"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="mobile-menu" class="hidden md:hidden bg-slate-800 border-t border-slate-700 p-4 space-y-2 animate-fade-in">
+                ${links}
+                <hr class="border-slate-700 my-2">
+                <div class="flex justify-between items-center pt-2">
+                    <span class="text-xs text-slate-400">${user.email}</span>
+                    <button onclick="window.handleLogout()" class="bg-red-600 px-4 py-2 rounded text-sm font-bold">ניתוק מהמערכת</button>
+                </div>
+            </div>
+        </nav>
+        <style>
+            @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+            .animate-fade-in { animation: fadeIn 0.2s ease-out; }
+        </style>
+        `;
+
+        const existingNav = document.querySelector('nav');
+        if (existingNav) existingNav.remove();
+        document.body.prepend(navContainer.firstElementChild);
+    });
 }
 
-// פונקציית יציאה מסודרת
-window.handleLogout = async () => {
-    if(confirm("בטוח שברצונך לצאת?")) {
-        try {
-            await auth.signOut();
-            window.location.href = 'login.html';
-        } catch (e) {
-            console.error("Logout error", e);
-        }
+// פונקציות גלובליות לשליטה מה-HTML
+window.toggleMobileMenu = () => {
+    const menu = document.getElementById('mobile-menu');
+    const icon = document.getElementById('menu-icon');
+    const isHidden = menu.classList.toggle('hidden');
+    icon.classList.toggle('fa-bars', isHidden);
+    icon.classList.toggle('fa-times', !isHidden);
+};
+
+window.handleLogout = () => {
+    if(confirm("בטוח שברצונך להתנתק?")) {
+        signOut(auth).then(() => window.location.href = 'login.html');
     }
 };
