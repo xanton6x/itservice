@@ -2,19 +2,47 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>IT Service - Login</title>
+    <title>התחברות למערכת IT</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-900 flex items-center justify-center h-screen">
-    <div class="bg-white p-8 rounded-lg shadow-xl w-96 text-center">
-        <h1 class="text-2xl font-bold mb-6 text-blue-600">מערכת IT מרכזית</h1>
-        <div id="auth-form">
-            <input type="email" id="email" placeholder="אימייל" class="w-full p-2 mb-4 border rounded">
-            <input type="password" id="password" placeholder="סיסמה" class="w-full p-2 mb-4 border rounded">
-            <button id="login-btn" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition">התחבר</button>
-            <p class="mt-4 text-sm cursor-pointer text-gray-500" id="toggle-auth">אין לך חשבון? הירשם כאן</p>
+    <div class="bg-white p-8 rounded-lg shadow-xl w-96">
+        <h1 class="text-2xl font-bold mb-6 text-center text-blue-600">כניסה למערכת</h1>
+        <div id="loginForm" class="space-y-4">
+            <input type="email" id="email" placeholder="אימייל" class="w-full p-3 border rounded shadow-sm focus:ring-2 focus:ring-blue-500 outline-none">
+            <input type="password" id="password" placeholder="סיסמה" class="w-full p-3 border rounded shadow-sm focus:ring-2 focus:ring-blue-500 outline-none">
+            <button id="loginBtn" class="w-full bg-blue-600 text-white p-3 rounded font-bold hover:bg-blue-700 transition">התחבר</button>
+            <p id="errorMsg" class="text-red-500 text-sm text-center hidden"></p>
         </div>
+        <p class="mt-6 text-sm text-center text-gray-500">
+            אין לך חשבון? צור קשר עם המנהל <br> <span class="font-bold">anton@rcc.co.il</span>
+        </p>
     </div>
-    <script type="module" src="js/auth.js"></script>
+
+    <script type="module">
+        // מייבאים את האובייקטים מהקובץ המרכזי שקיים אצלך
+        import { auth } from './js/app.js';
+        import { signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        // אם המשתמש כבר מחובר, שלח אותו ישר לדף הבית
+        onAuthStateChanged(auth, (user) => {
+            if (user) window.location.href = 'index.html';
+        });
+
+        document.getElementById('loginBtn').onclick = async () => {
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('password').value;
+            const errorElement = document.getElementById('errorMsg');
+
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+                window.location.href = 'index.html';
+            } catch (error) {
+                errorElement.innerText = "שגיאה: אימייל או סיסמה שגויים";
+                errorElement.classList.remove('hidden');
+                console.error(error.message);
+            }
+        };
+    </script>
 </body>
 </html>
