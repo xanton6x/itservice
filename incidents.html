@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ניהול קריאות - מערכת IT</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -95,6 +96,12 @@
                 <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
             </div>
             <div class="p-6 overflow-y-auto flex-1">
+                <div id="timeInfo" class="hidden flex justify-between bg-yellow-50 p-2 rounded-lg border border-yellow-100 mb-4 text-[11px] font-bold text-yellow-700">
+                    <span id="timeStarted">התחלה: -</span>
+                    <span id="timeEnded">סיום: -</span>
+                    <span id="duration">זמן עבודה: -</span>
+                </div>
+
                 <div class="flex flex-wrap gap-4 mb-6 p-4 bg-gray-50 rounded-lg border items-center justify-between">
                     <div class="flex gap-4">
                         <span id="modalClientName" class="font-bold text-slate-700"></span>
@@ -122,7 +129,7 @@
 
     <script type="module">
         import { auth, db, injectNavbar, ADMIN_PRIMARY } from './js/app.js';
-        import { collection, query, where, onSnapshot, doc, updateDoc, deleteDoc, orderBy, getDocs, arrayUnion, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { collection, query, where, onSnapshot, doc, updateDoc, deleteDoc, orderBy, getDocs, arrayUnion, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         injectNavbar();
         window.activeTicketId = null;
@@ -195,7 +202,6 @@
             });
         }
 
-        // פונקציות פתיחת קריאה חדשה
         window.openNewTicketModal = () => { document.getElementById('newTicketModal').classList.remove('hidden'); document.body.classList.add('modal-active'); };
         window.closeNewTicketModal = () => { document.getElementById('newTicketModal').classList.add('hidden'); document.body.classList.remove('modal-active'); };
         
@@ -222,7 +228,6 @@
             document.querySelectorAll('#newTicketModal input, #newTicketModal textarea').forEach(i => i.value = '');
         };
 
-        // פונקציות עדכון קריאה קיימת
         window.openTicket = (id) => { window.activeTicketId = id; updateModalUI(); document.getElementById('ticketModal').classList.remove('hidden'); document.body.classList.add('modal-active'); };
         window.closeModal = () => { document.getElementById('ticketModal').classList.add('hidden'); document.body.classList.remove('modal-active'); window.activeTicketId = null; };
 
@@ -239,6 +244,23 @@
             document.getElementById('modalPrioritySelect').innerHTML = ['נמוכה', 'בינונית', 'גבוהה', 'קריטי'].map(p => `<option value="${p}" ${t.priority === p ? 'selected' : ''}>${p}</option>`).join('');
             document.getElementById('modalTechSelect').innerHTML = `<option value="">שיוך...</option>` + techsList.map(tech => `<option value="${tech.email}" ${t.assignedTo === tech.email ? 'selected' : ''}>${tech.name}</option>`).join('');
 
+            // תצוגת זמנים
+            const timeInfo = document.getElementById('timeInfo');
+            if(t.startTime) {
+                timeInfo.classList.remove('hidden');
+                document.getElementById('timeStarted').innerText = `התחלה: ${new Date(t.startTime).toLocaleString('he-IL')}`;
+                if(t.endTime) {
+                    document.getElementById('timeEnded').innerText = `סיום: ${new Date(t.endTime).toLocaleString('he-IL')}`;
+                    const diff = (new Date(t.endTime) - new Date(t.startTime)) / 1000 / 60; // דקות
+                    document.getElementById('duration').innerText = `זמן עבודה: ${Math.round(diff)} דק'`;
+                } else {
+                    document.getElementById('timeEnded').innerText = "סיום: טרם";
+                    document.getElementById('duration').innerText = "בטיפול...";
+                }
+            } else {
+                timeInfo.classList.add('hidden');
+            }
+
             const timeline = document.getElementById('modalTimeline');
             if (t.comments && t.comments.length > 0) {
                 const sorted = [...t.comments].sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -246,41 +268,63 @@
             } else { timeline.innerHTML = '<p class="text-xs text-gray-400 italic">אין עדכונים.</p>'; }
         };
 
-        window.saveAllChanges = () => {
+        window.saveAllChanges = async () => {
             const id = window.activeTicketId;
+            const currentTicket = allTickets.find(ticket => ticket.id === id);
+            const newStatus = document.getElementById('modalStatusSelect').value;
             const comment = document.getElementById('newComment').value.trim();
+            
             const updateData = {
-                status: document.getElementById('modalStatusSelect').value,
+                status: newStatus,
                 assignedTo: document.getElementById('modalTechSelect').value,
                 priority: document.getElementById('modalPrioritySelect').value
             };
+
+            // לוגיקת זמן: התחלה
+            if (newStatus === 'בטיפול' && !currentTicket.startTime) {
+                updateData.startTime = new Date().toISOString();
+            }
+            // לוגיקת זמן: סיום
+            if (newStatus === 'הושלם' && !currentTicket.endTime) {
+                updateData.endTime = new Date().toISOString();
+            }
+
             if(comment) updateData.comments = arrayUnion({ text: comment, userName: auth.currentUser.email, date: new Date().toISOString() });
             
             closeModal();
-            updateDoc(doc(db, "tickets", id), updateData).then(() => showToast("הקריאה עודכנה"));
+            await updateDoc(doc(db, "tickets", id), updateData);
+            showToast("הקריאה עודכנה");
         };
 
         window.changeStatusTab = (type) => { 
-    currentStatusTab = type;
-    
-    // הגדרת אלמנטים
-    const btnOpen = document.getElementById('btnOpen');
-    const btnClosed = document.getElementById('btnClosed');
+            currentStatusTab = type;
+            const btnOpen = document.getElementById('btnOpen');
+            const btnClosed = document.getElementById('btnClosed');
+            if (type === 'open') {
+                btnOpen.className = "px-4 py-2 text-sm font-medium bg-blue-600 text-white border border-blue-600 rounded-r-lg";
+                btnClosed.className = "px-4 py-2 text-sm font-medium bg-white text-gray-700 border border-gray-200 rounded-l-lg hover:bg-gray-50";
+            } else {
+                btnOpen.className = "px-4 py-2 text-sm font-medium bg-white text-gray-700 border border-gray-200 rounded-r-lg hover:bg-gray-50";
+                btnClosed.className = "px-4 py-2 text-sm font-medium bg-blue-600 text-white border border-blue-600 rounded-l-lg";
+            }
+            loadTickets(); 
+        };
 
-    // עדכון עיצוב הכפתורים כדי שהסימון הכחול יעבור
-    if (type === 'open') {
-        btnOpen.className = "px-4 py-2 text-sm font-medium bg-blue-600 text-white border border-blue-600 rounded-r-lg";
-        btnClosed.className = "px-4 py-2 text-sm font-medium bg-white text-gray-700 border border-gray-200 rounded-l-lg hover:bg-gray-50";
-    } else {
-        btnOpen.className = "px-4 py-2 text-sm font-medium bg-white text-gray-700 border border-gray-200 rounded-r-lg hover:bg-gray-50";
-        btnClosed.className = "px-4 py-2 text-sm font-medium bg-blue-600 text-white border border-blue-600 rounded-l-lg";
-    }
+        window.quickAssign = async (id, tech) => { 
+            const updateData = { assignedTo: tech, status: tech ? "בטיפול" : "חדש" };
+            if (tech) updateData.startTime = new Date().toISOString(); // התחלת זמן בשיוך מהיר
+            await updateDoc(doc(db, "tickets", id), updateData); 
+        };
 
-    // טעינת הקריאות המתאימות
-    loadTickets(); 
-};
-        window.quickAssign = async (id, tech) => { await updateDoc(doc(db, "tickets", id), { assignedTo: tech, status: tech ? "בטיפול" : "חדש" }); };
-        window.quickClose = async (id) => { if(confirm("לסגור?")) await updateDoc(doc(db, "tickets", id), { status: "הושלם" }); };
+        window.quickClose = async (id) => { 
+            if(confirm("לסגור?")) {
+                await updateDoc(doc(db, "tickets", id), { 
+                    status: "הושלם",
+                    endTime: new Date().toISOString() // סיום זמן בסגירה מהירה
+                }); 
+            }
+        };
+
         window.permanentDelete = async (id) => { if(confirm("למחוק?")) await deleteDoc(doc(db, "tickets", id)); };
 
         function showToast(msg) { const x = document.getElementById("toast"); x.innerText = msg; x.className = "show"; setTimeout(() => { x.className = ""; }, 3000); }
