@@ -2,70 +2,93 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>ניהול קריאות מתקדם</title>
+    <title>ניהול קריאות מתקדם - IT</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .modal-active {
+            overflow: hidden;
+        }
+
+        .timeline-item:last-child .timeline-line {
+            display: none;
+        }
+    </style>
 </head>
 <body class="bg-gray-100">
     <div class="max-w-6xl mx-auto p-6">
-        
+
         <div class="flex flex-col md:flex-row justify-between items-center mb-6">
             <h1 class="text-2xl font-bold text-slate-800">ניהול קריאות שירות</h1>
-            
-            <div class="inline-flex rounded-md shadow-sm mt-4 md:mt-0" role="group">
+            <div class="inline-flex rounded-md shadow-sm mt-4 md:mt-0">
                 <button onclick="changeStatusTab('open')" id="btnOpen" class="px-4 py-2 text-sm font-medium bg-blue-600 text-white border border-blue-600 rounded-r-lg">קריאות פתוחות</button>
                 <button onclick="changeStatusTab('closed')" id="btnClosed" class="px-4 py-2 text-sm font-medium bg-white text-gray-700 border border-gray-200 rounded-l-lg hover:bg-gray-50">היסטוריית סגורות</button>
             </div>
         </div>
 
         <div class="bg-white p-4 rounded-xl shadow-sm mb-6 grid grid-cols-1 md:grid-cols-3 gap-4 border border-slate-200">
-            <div class="relative">
-                <label class="block text-xs font-bold text-gray-500 mb-1">חיפוש חופשי</label>
-                <input type="text" id="searchInput" oninput="applyFilters()" placeholder="חפש לקוח, נושא או תיאור..." 
-                       class="w-full p-2 pr-8 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
-                <i class="fas fa-search absolute right-2 bottom-3 text-gray-400"></i>
-            </div>
-
-            <div>
-                <label class="block text-xs font-bold text-gray-500 mb-1">סינון לפי טכנאי</label>
-                <select id="techFilter" onchange="applyFilters()" class="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="all">כל הטכנאים</option>
-                    <option value="unassigned">טרם שויך</option>
-                    </select>
-            </div>
-
-            <div>
-                <label class="block text-xs font-bold text-gray-500 mb-1">סוג תקלה</label>
-                <select id="typeFilter" onchange="applyFilters()" class="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="all">כל הסוגים</option>
-                    <option value="חומרה">חומרה</option>
-                    <option value="תוכנה">תוכנה</option>
-                    <option value="רשת">רשת</option>
-                    <option value="אחר">אחר</option>
-                </select>
-            </div>
+            <input type="text" id="searchInput" oninput="applyFilters()" placeholder="חפש לפי מספר INC, לקוח או נושא..." class="p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
+            <select id="techFilter" onchange="applyFilters()" class="p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="all">כל הטכנאים</option>
+                <option value="unassigned">טרם שויך</option>
+            </select>
+            <select id="typeFilter" onchange="applyFilters()" class="p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="all">כל הסוגים</option>
+                <option value="חומרה">חומרה</option>
+                <option value="תוכנה">תוכנה</option>
+                <option value="רשת">רשת</option>
+            </select>
         </div>
 
-        <div id="ticketsContainer" class="space-y-4">
-            <div class="text-center p-10 text-gray-500 italic">טוען נתונים...</div>
+        <div id="ticketsContainer" class="space-y-4"></div>
+    </div>
+
+    <div id="ticketModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+            <div class="p-4 border-b bg-slate-50 flex justify-between items-center">
+                <div>
+                    <span id="modalIncNumber" class="text-blue-600 font-mono font-bold text-lg"></span>
+                    <h2 id="modalTitle" class="text-xl font-bold text-slate-800"></h2>
+                </div>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            </div>
+
+            <div class="p-6 overflow-y-auto flex-1">
+                <div class="mb-6">
+                    <h3 class="text-sm font-bold text-gray-400 uppercase mb-2">תיאור התקלה</h3>
+                    <p id="modalDescription" class="text-slate-700 bg-slate-50 p-3 rounded-lg border border-slate-100"></p>
+                </div>
+
+                <div class="mb-4">
+                    <h3 class="text-sm font-bold text-gray-400 uppercase mb-3">יומן טיפול ועדכונים</h3>
+                    <div id="modalTimeline" class="space-y-4 border-r-2 border-blue-100 mr-2 pr-4">
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 border-t bg-gray-50">
+                <div class="flex gap-2">
+                    <input type="text" id="newComment" placeholder="הוסף עדכון או תגובה..." class="flex-1 p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                    <button onclick="submitComment()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 transition">שלח</button>
+                </div>
+            </div>
         </div>
     </div>
 
     <script type="module">
         import { auth, db, injectNavbar, ADMIN_PRIMARY } from './js/app.js';
-        import { collection, query, where, onSnapshot, doc, updateDoc, orderBy, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { collection, query, where, onSnapshot, doc, updateDoc, orderBy, getDoc, getDocs, arrayUnion, Timestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         injectNavbar();
 
         let currentStatusTab = 'open';
-        let techsList = []; 
-        let allTickets = []; // נשמור את כל הקריאות כאן כדי לסנן מקומית לביצועים מהירים
+        let techsList = [];
+        let allTickets = [];
+        let activeTicketId = null;
 
         async function fetchTechs() {
             const usersSnap = await getDocs(collection(db, "users"));
             const techSelect = document.getElementById('techFilter');
-            techsList = [];
-            
             usersSnap.forEach(uDoc => {
                 const uData = uDoc.data();
                 if (uData.role === 'tech' || uData.role === 'admin' || uData.email === ADMIN_PRIMARY) {
@@ -80,50 +103,33 @@
 
         window.changeStatusTab = (type) => {
             currentStatusTab = type;
-            document.getElementById('btnOpen').className = type === 'open' ? 'px-4 py-2 text-sm font-medium bg-blue-600 text-white border border-blue-600 rounded-r-lg' : 'px-4 py-2 text-sm font-medium bg-white text-gray-700 border border-gray-200 rounded-r-lg';
-            document.getElementById('btnClosed').className = type === 'closed' ? 'px-4 py-2 text-sm font-medium bg-blue-600 text-white border border-blue-600 rounded-l-lg' : 'px-4 py-2 text-sm font-medium bg-white text-gray-700 border border-gray-200 rounded-l-lg';
             loadTickets();
         };
 
         async function loadTickets() {
-            const user = auth.currentUser;
-            if (!user) return;
-
-            const userDoc = await getDoc(doc(db, "users", user.uid));
-            const role = userDoc.data()?.role || 'user';
-            const isAdmin = (user.email === ADMIN_PRIMARY || role === 'admin');
-
-            if (isAdmin && techsList.length === 0) await fetchTechs();
+            if (!auth.currentUser) return;
+            if (techsList.length === 0) await fetchTechs();
 
             const statusFilter = currentStatusTab === 'open' ? ["חדש", "בטיפול"] : ["הושלם", "מבוטל"];
             const q = query(collection(db, "tickets"), where("status", "in", statusFilter), orderBy("createdAt", "desc"));
 
             onSnapshot(q, (snapshot) => {
                 allTickets = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                applyFilters(); // הרצת הסינון על הנתונים החדשים
+                applyFilters();
             });
         }
 
         window.applyFilters = () => {
-            const searchText = document.getElementById('searchInput').value.toLowerCase();
-            const techValue = document.getElementById('techFilter').value;
-            const typeValue = document.getElementById('typeFilter').value;
-            
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const tech = document.getElementById('techFilter').value;
+            const type = document.getElementById('typeFilter').value;
+
             const filtered = allTickets.filter(t => {
-                const matchesSearch = !searchText || 
-                    (t.clientName?.toLowerCase().includes(searchText)) || 
-                    (t.title?.toLowerCase().includes(searchText)) || 
-                    (t.description?.toLowerCase().includes(searchText));
-                
-                const matchesTech = techValue === 'all' || 
-                    (techValue === 'unassigned' && !t.assignedTo) || 
-                    (t.assignedTo === techValue);
-                
-                const matchesType = typeValue === 'all' || t.issueType === typeValue;
-
-                return matchesSearch && matchesTech && matchesType;
+                const incNum = `INC-${t.ticketNumber || t.id.slice(-4)}`;
+                return (!search || t.clientName?.toLowerCase().includes(search) || t.title?.toLowerCase().includes(search) || incNum.toLowerCase().includes(search)) &&
+                    (tech === 'all' || (tech === 'unassigned' && !t.assignedTo) || t.assignedTo === tech) &&
+                    (type === 'all' || t.issueType === type);
             });
-
             renderTickets(filtered);
         };
 
@@ -131,57 +137,95 @@
             const container = document.getElementById('ticketsContainer');
             container.innerHTML = '';
 
-            if (tickets.length === 0) {
-                container.innerHTML = '<div class="bg-white p-10 text-center rounded shadow text-gray-400">לא נמצאו קריאות התואמות את הסינון.</div>';
-                return;
-            }
-
             tickets.forEach(t => {
-                const date = t.createdAt ? new Date(t.createdAt).toLocaleString('he-IL') : '---';
-                const isAdmin = true; // לצורך הדוגמה, המערכת מציגה למנהל
-
-                let assignHtml = `
-                    <select onchange="assignTicket('${t.id}', this.value)" class="text-sm border rounded p-1 bg-slate-50 mt-1">
-                        <option value="">שייך לטכנאי...</option>
-                        ${techsList.map(tech => `<option value="${tech.email}" ${t.assignedTo === tech.email ? 'selected' : ''}>${tech.name}</option>`).join('')}
-                    </select>`;
+                const incNum = `INC-${t.ticketNumber || t.id.slice(-4)}`;
+                const date = t.createdAt ? new Date(t.createdAt).toLocaleDateString('he-IL') : '---';
 
                 container.innerHTML += `
-                    <div class="bg-white p-5 rounded-lg shadow border-r-4 ${t.status === 'הושלם' ? 'border-green-500' : 'border-blue-500'}">
-                        <div class="flex justify-between items-start">
+                        <div onclick="openTicket('${t.id}')" class="bg-white p-5 rounded-lg shadow-sm border-r-4 ${t.status === 'הושלם' ? 'border-green-500' : 'border-blue-500'} hover:shadow-md transition cursor-pointer flex justify-between items-center">
                             <div class="flex-1">
-                                <div class="text-xs text-gray-400 mb-1">#${t.id.slice(-5)} | ${date}</div>
+                                <div class="flex items-center gap-3 mb-1">
+                                    <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-mono text-xs font-bold">${incNum}</span>
+                                    <span class="text-xs text-gray-400">${date}</span>
+                                </div>
                                 <h3 class="font-bold text-slate-800">${t.clientName} - ${t.title}</h3>
-                                <p class="text-sm text-gray-600 mt-2 p-2 bg-gray-50 rounded">${t.description}</p>
-                                <div class="mt-2 flex gap-3 text-xs font-bold text-blue-600">
-                                    <span><i class="fas fa-tag ml-1"></i>${t.issueType}</span>
-                                    ${t.assignedTo ? `<span><i class="fas fa-user-check ml-1"></i>${t.assignedTo}</span>` : '<span class="text-red-500"><i class="fas fa-user-slash ml-1"></i>טרם שויך</span>'}
+                                <div class="text-xs text-gray-500 mt-1">
+                                    <i class="fas fa-user-circle ml-1"></i> ${t.assignedTo || 'טרם שויך'} | <i class="fas fa-tag ml-1"></i> ${t.issueType}
                                 </div>
                             </div>
-                            <div class="mr-4 flex flex-col gap-2 min-w-[150px]">
-                                <label class="text-[10px] font-bold text-gray-400 uppercase">סטטוס</label>
-                                <select onchange="updateStatus('${t.id}', this.value)" class="text-sm border rounded p-1">
+                            <div class="flex items-center gap-4" onclick="event.stopPropagation()">
+                                 <select onchange="updateStatus('${t.id}', this.value)" class="text-xs border rounded p-2 bg-gray-50">
                                     <option value="חדש" ${t.status === 'חדש' ? 'selected' : ''}>חדש</option>
                                     <option value="בטיפול" ${t.status === 'בטיפול' ? 'selected' : ''}>בטיפול</option>
                                     <option value="הושלם" ${t.status === 'הושלם' ? 'selected' : ''}>הושלם</option>
-                                </select>
-                                <label class="text-[10px] font-bold text-gray-400 uppercase mt-2">שיוך</label>
-                                ${assignHtml}
+                                 </select>
+                                 <i class="fas fa-chevron-left text-gray-300"></i>
                             </div>
-                        </div>
-                    </div>`;
+                        </div>`;
             });
         }
 
-        window.assignTicket = async (id, techEmail) => {
-            await updateDoc(doc(db, "tickets", id), { assignedTo: techEmail, status: techEmail ? "בטיפול" : "חדש" });
+        window.openTicket = (id) => {
+            const t = allTickets.find(ticket => ticket.id === id);
+            activeTicketId = id;
+            document.getElementById('modalIncNumber').innerText = `INC-${t.ticketNumber || t.id.slice(-4)}`;
+            document.getElementById('modalTitle').innerText = t.title;
+            document.getElementById('modalDescription').innerText = t.description;
+
+            const timeline = document.getElementById('modalTimeline');
+            timeline.innerHTML = '';
+
+            if (t.comments && t.comments.length > 0) {
+                t.comments.forEach(c => {
+                    const cDate = c.date?.toDate ? c.date.toDate().toLocaleString('he-IL') : new Date(c.date).toLocaleString('he-IL');
+                    timeline.innerHTML += `
+                            <div class="relative timeline-item pb-4 pr-2">
+                                <div class="text-xs font-bold text-blue-600 mb-1">${c.userName} <span class="text-gray-400 font-normal mr-2">${cDate}</span></div>
+                                <p class="text-sm text-slate-700">${c.text}</p>
+                            </div>`;
+                });
+            } else {
+                timeline.innerHTML = '<p class="text-xs text-gray-400 italic">אין עדכונים עדיין.</p>';
+            }
+
+            document.getElementById('ticketModal').classList.remove('hidden');
+            document.body.classList.add('modal-active');
+        };
+
+        window.closeModal = () => {
+            document.getElementById('ticketModal').classList.add('hidden');
+            document.body.classList.remove('modal-active');
+            activeTicketId = null;
+        };
+
+        window.submitComment = async () => {
+            const input = document.getElementById('newComment');
+            if (!input.value.trim() || !activeTicketId) return;
+
+            const newComment = {
+                text: input.value,
+                userName: auth.currentUser.email,
+                date: new Date(),
+                userId: auth.currentUser.uid
+            };
+
+            try {
+                await updateDoc(doc(db, "tickets", activeTicketId), {
+                    comments: arrayUnion(newComment)
+                });
+                input.value = '';
+                // המודאל יתעדכן אוטומטית בזכות ה-onSnapshot שמזהה שינוי במסמך
+                setTimeout(() => openTicket(activeTicketId), 300);
+            } catch (e) {
+                alert("שגיאה בהוספת תגובה: " + e.message);
+            }
         };
 
         window.updateStatus = async (id, newStatus) => {
             await updateDoc(doc(db, "tickets", id), { status: newStatus });
         };
 
-        auth.onAuthStateChanged(user => { if(user) loadTickets(); });
+        auth.onAuthStateChanged(user => { if (user) loadTickets(); });
     </script>
 </body>
 </html>
