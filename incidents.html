@@ -15,6 +15,17 @@
             border-right: 2px solid #e2e8f0;
             padding-right: 1.5rem;
         }
+
+            .timeline-item::before {
+                content: '';
+                position: absolute;
+                right: -6px;
+                top: 5px;
+                width: 10px;
+                height: 10px;
+                background: #3b82f6;
+                border-radius: 50%;
+            }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -45,7 +56,9 @@
             </select>
         </div>
 
-        <div id="ticketsContainer" class="space-y-4"></div>
+        <div id="ticketsContainer" class="space-y-4">
+            <div class="text-center p-10 text-gray-400 italic">טוען נתונים...</div>
+        </div>
     </div>
 
     <div id="ticketModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -62,29 +75,29 @@
                 <div class="grid grid-cols-2 gap-4 mb-6 bg-blue-50 p-4 rounded-lg">
                     <div>
                         <label class="block text-[10px] font-bold text-blue-400 uppercase">סטטוס נוכחי</label>
-                        <select id="modalStatusSelect" onchange="updateStatus(activeTicketId, this.value)" class="w-full mt-1 border rounded p-1 text-sm bg-white"></select>
+                        <select id="modalStatusSelect" onchange="updateStatus(window.activeTicketId, this.value)" class="w-full mt-1 border rounded p-1 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none"></select>
                     </div>
                     <div>
                         <label class="block text-[10px] font-bold text-blue-400 uppercase">טכנאי מטפל</label>
-                        <select id="modalTechSelect" onchange="assignTicket(activeTicketId, this.value)" class="w-full mt-1 border rounded p-1 text-sm bg-white"></select>
+                        <select id="modalTechSelect" onchange="assignTicket(window.activeTicketId, this.value)" class="w-full mt-1 border rounded p-1 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none"></select>
                     </div>
                 </div>
 
                 <div class="mb-6">
                     <h3 class="text-sm font-bold text-gray-400 uppercase mb-2">תיאור התקלה</h3>
-                    <p id="modalDescription" class="text-slate-700 bg-slate-50 p-3 rounded-lg border border-slate-100"></p>
+                    <p id="modalDescription" class="text-slate-700 bg-slate-50 p-3 rounded-lg border border-slate-100 whitespace-pre-wrap"></p>
                 </div>
 
                 <div class="mb-4">
-                    <h3 class="text-sm font-bold text-gray-400 uppercase mb-3">יומן טיפול</h3>
+                    <h3 class="text-sm font-bold text-gray-400 uppercase mb-3">יומן טיפול ועדכונים</h3>
                     <div id="modalTimeline" class="space-y-4 mr-2"></div>
                 </div>
             </div>
 
             <div class="p-4 border-t bg-gray-50">
                 <div class="flex gap-2">
-                    <input type="text" id="newComment" placeholder="כתוב עדכון חדש..." class="flex-1 p-2 border rounded-lg text-sm outline-none">
-                    <button onclick="submitComment()" class="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-blue-700">עדכן</button>
+                    <input type="text" id="newComment" placeholder="כתוב עדכון חדש לטיפול..." class="flex-1 p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                    <button id="btnSubmitComment" onclick="submitComment()" class="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 transition">עדכן</button>
                 </div>
             </div>
         </div>
@@ -96,10 +109,11 @@
 
         injectNavbar();
 
+        // הגדרה גלובלית לפתרון שגיאת ה-ReferenceError
+        window.activeTicketId = null;
         let currentStatusTab = 'open';
         let techsList = [];
         let allTickets = [];
-        let activeTicketId = null;
 
         async function fetchTechs() {
             const usersSnap = await getDocs(collection(db, "users"));
@@ -134,7 +148,7 @@
             onSnapshot(q, (snapshot) => {
                 allTickets = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 applyFilters();
-                if (activeTicketId) updateModalUI(); // עדכון המודאל אם הוא פתוח
+                if (window.activeTicketId) updateModalUI();
             });
         }
 
@@ -166,25 +180,27 @@
                                 <div class="flex-1">
                                     <div class="flex items-center gap-3 mb-1">
                                         <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-mono text-xs font-bold">${incNum}</span>
-                                        <span class="text-xs text-gray-400">${t.clientName}</span>
+                                        <span class="text-xs text-gray-500 font-bold">${t.clientName}</span>
                                     </div>
                                     <h3 class="font-bold text-slate-800">${t.title}</h3>
+                                    <p class="text-xs text-gray-400 mt-1"><i class="fas fa-tag ml-1"></i>${t.issueType}</p>
                                 </div>
 
                                 <div class="flex items-center gap-2" onclick="event.stopPropagation()">
                                     <div class="flex flex-col">
                                         <label class="text-[9px] font-bold text-gray-400 uppercase mr-1">שיוך</label>
-                                        <select onchange="assignTicket('${t.id}', this.value)" class="text-xs border rounded p-1.5 bg-slate-50 border-slate-200">
-                                            <option value="">בחר טכנאי...</option>
+                                        <select onchange="assignTicket('${t.id}', this.value)" class="text-xs border rounded p-1.5 bg-slate-50 border-slate-200 outline-none focus:ring-1 focus:ring-blue-400">
+                                            <option value="">שייך טכנאי...</option>
                                             ${techOptions}
                                         </select>
                                     </div>
                                     <div class="flex flex-col">
                                         <label class="text-[9px] font-bold text-gray-400 uppercase mr-1">סטטוס</label>
-                                        <select onchange="updateStatus('${t.id}', this.value)" class="text-xs border rounded p-1.5 bg-slate-50">
+                                        <select onchange="updateStatus('${t.id}', this.value)" class="text-xs border rounded p-1.5 bg-slate-50 outline-none focus:ring-1 focus:ring-blue-400">
                                             <option value="חדש" ${t.status === 'חדש' ? 'selected' : ''}>חדש</option>
                                             <option value="בטיפול" ${t.status === 'בטיפול' ? 'selected' : ''}>בטיפול</option>
                                             <option value="הושלם" ${t.status === 'הושלם' ? 'selected' : ''}>הושלם</option>
+                                            <option value="מבוטל" ${t.status === 'מבוטל' ? 'selected' : ''}>מבוטל</option>
                                         </select>
                                     </div>
                                 </div>
@@ -194,26 +210,26 @@
         }
 
         window.openTicket = (id) => {
-            activeTicketId = id;
+            window.activeTicketId = id;
             updateModalUI();
             document.getElementById('ticketModal').classList.remove('hidden');
             document.body.classList.add('modal-active');
         };
 
-        function updateModalUI() {
-            const t = allTickets.find(ticket => ticket.id === activeTicketId);
+        window.updateModalUI = () => {
+            const t = allTickets.find(ticket => ticket.id === window.activeTicketId);
             if (!t) return;
 
             document.getElementById('modalIncNumber').innerText = `INC-${t.ticketNumber || t.id.slice(-4)}`;
             document.getElementById('modalTitle').innerText = t.title;
             document.getElementById('modalDescription').innerText = t.description;
 
-            // עדכון ה-Selects בתוך המודאל
             const statusSelect = document.getElementById('modalStatusSelect');
             statusSelect.innerHTML = `
                     <option value="חדש" ${t.status === 'חדש' ? 'selected' : ''}>חדש</option>
                     <option value="בטיפול" ${t.status === 'בטיפול' ? 'selected' : ''}>בטיפול</option>
                     <option value="הושלם" ${t.status === 'הושלם' ? 'selected' : ''}>הושלם</option>
+                    <option value="מבוטל" ${t.status === 'מבוטל' ? 'selected' : ''}>מבוטל</option>
                 `;
 
             const techSelect = document.getElementById('modalTechSelect');
@@ -222,34 +238,66 @@
             ).join('');
 
             const timeline = document.getElementById('modalTimeline');
-            timeline.innerHTML = t.comments?.map(c => `
-                    <div class="timeline-item mb-4">
-                        <div class="text-xs font-bold text-blue-600">${c.userName} <span class="text-gray-400 font-normal mr-2">${new Date(c.date).toLocaleString('he-IL')}</span></div>
-                        <p class="text-sm text-slate-700">${c.text}</p>
-                    </div>`).join('') || '<p class="text-xs text-gray-400 italic">אין עדכונים.</p>';
+            if (t.comments && t.comments.length > 0) {
+                const sorted = [...t.comments].sort((a, b) => new Date(b.date) - new Date(a.date));
+                timeline.innerHTML = sorted.map(c => `
+                        <div class="timeline-item mb-4">
+                            <div class="text-[11px] font-bold text-blue-600">
+                                ${c.userName} • <span class="text-gray-400 font-normal">${new Date(c.date).toLocaleString('he-IL')}</span>
+                            </div>
+                            <p class="text-sm text-slate-700 mt-1">${c.text}</p>
+                        </div>`).join('');
+            } else {
+                timeline.innerHTML = '<p class="text-xs text-gray-400 italic pr-3">אין היסטוריית טיפול עדיין.</p>';
+            }
         }
 
         window.closeModal = () => {
             document.getElementById('ticketModal').classList.add('hidden');
             document.body.classList.remove('modal-active');
-            activeTicketId = null;
+            window.activeTicketId = null;
         };
 
         window.assignTicket = async (id, techEmail) => {
-            await updateDoc(doc(db, "tickets", id), { assignedTo: techEmail, status: techEmail ? "בטיפול" : "חדש" });
+            if (!id) return;
+            try {
+                await updateDoc(doc(db, "tickets", id), {
+                    assignedTo: techEmail,
+                    status: techEmail ? "בטיפול" : "חדש"
+                });
+            } catch (e) { console.error("Error assigning:", e); }
         };
 
         window.updateStatus = async (id, newStatus) => {
-            await updateDoc(doc(db, "tickets", id), { status: newStatus });
+            if (!id) return;
+            try {
+                await updateDoc(doc(db, "tickets", id), { status: newStatus });
+            } catch (e) { console.error("Error updating status:", e); }
         };
 
         window.submitComment = async () => {
             const input = document.getElementById('newComment');
-            if (!input.value.trim() || !activeTicketId) return;
-            await updateDoc(doc(db, "tickets", activeTicketId), {
-                comments: arrayUnion({ text: input.value, userName: auth.currentUser.email, date: new Date().toISOString() })
-            });
-            input.value = '';
+            const btn = document.getElementById('btnSubmitComment');
+            if (!input.value.trim() || !window.activeTicketId) return;
+
+            btn.disabled = true;
+            btn.innerText = 'מעדכן...';
+
+            try {
+                await updateDoc(doc(db, "tickets", window.activeTicketId), {
+                    comments: arrayUnion({
+                        text: input.value,
+                        userName: auth.currentUser.email,
+                        date: new Date().toISOString()
+                    })
+                });
+                input.value = '';
+            } catch (e) {
+                alert("שגיאה בעדכון: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'עדכן';
+            }
         };
 
         auth.onAuthStateChanged(user => { if (user) loadTickets(); });
