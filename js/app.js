@@ -64,7 +64,7 @@ export function injectNavbar() {
 
         nav.innerHTML = `
             <div class="flex items-center">
-                <div class="font-bold text-xl text-blue-400 ml-8 border-l border-slate-600 pl-4">IT SYSTEM</div>
+                <div class="font-bold text-xl text-blue-400 ml-8 border-l border-slate-600 pl-4"> IT Mgmgt </div>
                 <div class="flex items-center">${links}</div>
             </div>
             <div class="flex items-center gap-4">
