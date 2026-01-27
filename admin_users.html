@@ -2,23 +2,51 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>ניהול משתמשים - IT System</title>
+    <title>ניהול משתמשים - מערכת IT</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body class="bg-gray-100">
 
     <div class="max-w-6xl mx-auto p-6">
-        <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-blue-600">
-            <div class="flex justify-between items-center mb-6">
-                <h1 class="text-2xl font-bold text-gray-800">ניהול הרשאות ומשתמשים</h1>
-                <div id="stats" class="text-sm font-medium text-slate-500"></div>
-            </div>
-            
-            <div id="userList" class="min-h-[200px] relative">
-                <div id="loader" class="flex flex-col items-center justify-center p-10">
-                    <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
-                    <p class="mt-4 text-gray-500 italic">מושך נתונים מ-Firestore...</p>
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-slate-800">ניהול הרשאות ומשתמשים</h1>
+            <button onclick="openAddUserModal()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-indigo-700 transition">
+                <i class="fas fa-user-plus ml-1"></i> משתמש חדש
+            </button>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
+            <table class="w-full text-right border-collapse">
+                <thead class="bg-slate-50 border-b">
+                    <tr>
+                        <th class="p-4 text-sm font-bold text-slate-600">שם</th>
+                        <th class="p-4 text-sm font-bold text-slate-600">אימייל</th>
+                        <th class="p-4 text-sm font-bold text-slate-600">תפקיד</th>
+                        <th class="p-4 text-sm font-bold text-slate-600">פעולות</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="addUserModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6">
+            <h2 class="text-xl font-bold mb-4">הוספת משתמש חדש למערכת</h2>
+            <div class="space-y-4">
+                <input type="text" id="newUserName" placeholder="שם מלא" class="w-full p-2 border rounded-lg outline-none">
+                <input type="email" id="newUserEmail" placeholder="אימייל (חובה להתחברות)" class="w-full p-2 border rounded-lg outline-none">
+                <select id="newUserRole" class="w-full p-2 border rounded-lg outline-none">
+                    <option value="user">משתמש כללי (פתיחת קריאות בלבד)</option>
+                    <option value="tech">טכנאי (טיפול בקריאות)</option>
+                    <option value="admin">מנהל מערכת (גישה להכל)</option>
+                </select>
+                <p class="text-[11px] text-gray-500">הערה: לאחר ההוספה, המשתמש יקבל אימייל לאיפוס סיסמה כדי להגדיר סיסמה ראשונית.</p>
+                <div class="flex gap-2">
+                    <button onclick="createNewUser()" id="saveBtn" class="flex-1 bg-indigo-600 text-white py-2 rounded-lg font-bold">צור משתמש</button>
+                    <button onclick="closeAddUserModal()" class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg font-bold">ביטול</button>
                 </div>
             </div>
         </div>
@@ -26,92 +54,124 @@
 
     <script type="module">
         import { auth, db, injectNavbar, ADMIN_PRIMARY } from './js/app.js';
-        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { collection, onSnapshot, doc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { collection, onSnapshot, doc, setDoc, deleteDoc, query, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        // הזרקת התפריט
         injectNavbar();
 
-        const listDiv = document.getElementById('userList');
-        const loader = document.getElementById('loader');
-
-        onAuthStateChanged(auth, (user) => {
-            if (!user) return;
-
-            // התחלת האזנה לנתונים
-            const q = query(collection(db, "users"), orderBy("email", "asc"));
-            
-            const unsubscribe = onSnapshot(q, (snapshot) => {
-                loader.classList.add('hidden'); // הסתרת הטעינה ברגע שיש תשובה (גם אם ריקה)
-                
-                if (snapshot.empty) {
-                    listDiv.innerHTML = '<p class="text-center p-10 text-gray-500">לא נמצאו משתמשים רשומים.</p>';
-                    return;
-                }
-
-                renderTable(snapshot);
-            }, (error) => {
-                console.error("Firestore Error:", error);
-                listDiv.innerHTML = `
-                    <div class="bg-red-50 text-red-700 p-4 rounded-lg text-center">
-                        <i class="fas fa-exclamation-triangle ml-2"></i>
-                        שגיאת הרשאות: וודא שחוקי ה-Firestore מאפשרים קריאה.
-                    </div>`;
-            });
+        // בדיקת הרשאת מנהל
+        auth.onAuthStateChanged(async (user) => {
+            if (!user || user.email !== ADMIN_PRIMARY) {
+                alert("אין לך הרשאה לדף זה");
+                window.location.href = 'index.html';
+                return;
+            }
+            loadUsers();
         });
 
-        function renderTable(snapshot) {
-            let html = `
-                <table class="w-full text-right mt-4 border-collapse overflow-hidden rounded-lg">
-                    <thead>
-                        <tr class="bg-slate-100 text-slate-700">
-                            <th class="p-3 border">שם</th>
-                            <th class="p-3 border">אימייל</th>
-                            <th class="p-3 border">תפקיד</th>
-                            <th class="p-3 border text-center">פעולה</th>
+        function loadUsers() {
+            onSnapshot(collection(db, "users"), (snapshot) => {
+                const tbody = document.getElementById('usersTableBody');
+                tbody.innerHTML = '';
+                
+                snapshot.forEach(uDoc => {
+                    const u = uDoc.data();
+                    const isSystemAdmin = u.email === ADMIN_PRIMARY;
+                    
+                    tbody.innerHTML += `
+                        <tr class="border-b hover:bg-gray-50 transition">
+                            <td class="p-4 text-sm text-slate-800 font-medium">${u.name || 'ללא שם'}</td>
+                            <td class="p-4 text-sm text-slate-600">${u.email}</td>
+                            <td class="p-4">
+                                <span class="px-2 py-1 rounded-full text-[10px] font-bold ${getRoleStyle(u.role)}">
+                                    ${getRoleName(u.role)}
+                                </span>
+                            </td>
+                            <td class="p-4 flex gap-2">
+                                <button onclick="resetUserPassword('${u.email}')" title="שלח איפוס סיסמה" class="text-blue-500 hover:bg-blue-50 p-2 rounded-lg">
+                                    <i class="fas fa-key"></i>
+                                </button>
+                                ${!isSystemAdmin ? `
+                                    <button onclick="deleteUserAccount('${u.email}')" title="מחק משתמש" class="text-red-500 hover:bg-red-50 p-2 rounded-lg">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                ` : ''}
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody>`;
-            
-            snapshot.forEach(userDoc => {
-                const user = userDoc.data();
-                const id = userDoc.id;
-                const isPrimary = (user.email === ADMIN_PRIMARY);
-
-                html += `
-                    <tr class="border-b hover:bg-gray-50 transition">
-                        <td class="p-3 border font-medium">${user.displayName || '---'}</td>
-                        <td class="p-3 border text-slate-600">${user.email}</td>
-                        <td class="p-3 border">
-                            <span class="px-2 py-1 rounded text-xs font-bold ${user.role === 'admin' ? 'bg-orange-100 text-orange-700' : (user.role === 'tech' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700')}">
-                                ${user.role || 'user'}
-                            </span>
-                        </td>
-                        <td class="p-3 border text-center">
-                            ${isPrimary ? '<span class="text-xs text-slate-400 italic">ניהול על</span>' : `
-                                <select onchange="changeRole('${id}', this.value)" class="text-xs border rounded p-1 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
-                                    <option value="user" ${user.role === 'user' ? 'selected' : ''}>משתמש</option>
-                                    <option value="tech" ${user.role === 'tech' ? 'selected' : ''}>טכנאי</option>
-                                    <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>מנהל</option>
-                                </select>
-                            `}
-                        </td>
-                    </tr>`;
+                    `;
+                });
             });
-            
-            html += `</tbody></table>`;
-            listDiv.innerHTML = html;
-            document.getElementById('stats').innerText = `סה"כ משתמשים: ${snapshot.size}`;
         }
 
-        // פונקציית עדכון
-        window.changeRole = async (id, newRole) => {
+        function getRoleName(role) {
+            const roles = { 'admin': 'מנהל אתר', 'tech': 'טכנאי', 'user': 'משתמש כללי' };
+            return roles[role] || 'משתמש';
+        }
+
+        function getRoleStyle(role) {
+            if (role === 'admin') return 'bg-purple-100 text-purple-700';
+            if (role === 'tech') return 'bg-blue-100 text-blue-700';
+            return 'bg-gray-100 text-gray-700';
+        }
+
+        // פתיחה/סגירה של המודאל
+        window.openAddUserModal = () => document.getElementById('addUserModal').classList.remove('hidden');
+        window.closeAddUserModal = () => document.getElementById('addUserModal').classList.add('hidden');
+
+        // יצירת משתמש חדש
+        window.createNewUser = async () => {
+            const name = document.getElementById('newUserName').value;
+            const email = document.getElementById('newUserEmail').value.toLowerCase().trim();
+            const role = document.getElementById('newUserRole').value;
+            const btn = document.getElementById('saveBtn');
+
+            if (!email || !name) return alert("נא למלא את כל השדות");
+
+            btn.disabled = true;
+            btn.innerText = "מעבד...";
+
             try {
-                await updateDoc(doc(db, "users", id), { role: newRole });
+                // 1. שמירה ב-Database
+                await setDoc(doc(db, "users", email), {
+                    name,
+                    email,
+                    role,
+                    createdAt: new Date().toISOString()
+                });
+
+                // 2. שליחת אימייל איפוס סיסמה (זה יאפשר לו לקבוע סיסמה בפעם הראשונה)
+                await sendPasswordResetEmail(auth, email);
+                
+                alert(`משתמש נוצר בהצלחה! נשלח אימייל לכתובת ${email} להגדרת סיסמה ראשונית.`);
+                closeAddUserModal();
             } catch (e) {
-                alert("שגיאה בעדכון התפקיד. וודא שאתה מחובר כמנהל.");
+                alert("שגיאה: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "צור משתמש";
             }
         };
+
+        // איפוס סיסמה
+        window.resetUserPassword = async (email) => {
+            if (confirm(`לשלח אימייל לשחזור סיסמה ל-${email}?`)) {
+                try {
+                    await sendPasswordResetEmail(auth, email);
+                    alert("אימייל איפוס סיסמה נשלח בהצלחה.");
+                } catch (e) { alert(e.message); }
+            }
+        };
+
+        // מחיקת משתמש (מה-Firestore)
+        window.deleteUserAccount = async (email) => {
+            if (confirm(`האם אתה בטוח שברצונך להסיר את ${email} מהמערכת?`)) {
+                try {
+                    await deleteDoc(doc(db, "users", email));
+                    alert("המשתמש הוסר מהמאגר.");
+                } catch (e) { alert(e.message); }
+            }
+        };
+
     </script>
 </body>
 </html>
