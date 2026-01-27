@@ -47,7 +47,6 @@ export function injectNavbar() {
 
         let links = `
             <a href="index.html" class="hover:text-blue-300 ml-5 font-medium">בית</a>
-            <a href="user_portal.html" class="hover:text-blue-300 ml-5 font-medium">פתיחת קריאה</a>
             <a href="incidents.html" class="hover:text-blue-300 ml-5 font-medium">קריאות</a>
         `;
 
