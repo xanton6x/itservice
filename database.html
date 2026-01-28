@@ -3,41 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DB Raw Editor - IT MGMT</title>
+    <title>מנהל מסד נתונים מלא - IT MGMT</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .edit-input { background: #1e293b; border: 1px solid #334155; color: white; padding: 4px 8px; border-radius: 4px; width: 100%; }
+    </style>
 </head>
-<body class="bg-[#0f172a] text-slate-200 min-h-screen font-mono">
+<body class="bg-[#0f172a] text-slate-200 min-h-screen">
 
-    <div class="max-w-7xl mx-auto p-4 md:p-8">
-        <header class="flex justify-between items-center mb-8 border-b border-slate-700 pb-6">
+    <div class="max-w-[95%] mx-auto py-8">
+        <header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4 border-b border-slate-800 pb-6">
             <div>
-                <h1 class="text-2xl font-bold text-blue-400"><i class="fas fa-database ml-2"></i>RAW DATABASE EDITOR</h1>
-                <p class="text-slate-500 text-sm">ניהול ישיר של רשומות במסד הנתונים</p>
+                <h1 class="text-3xl font-black text-blue-500 italic uppercase">System Master Control</h1>
+                <p class="text-slate-500 font-bold">ניהול, עריכה ושינוי נתונים בזמן אמת</p>
             </div>
-            <div class="flex gap-4">
-                <select id="collectionSelect" onchange="loadCollection(this.value)" class="bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-sm outline-none focus:border-blue-500">
-                    <option value="tickets">קריאות שירות (Tickets)</option>
-                    <option value="clients">לקוחות (Clients)</option>
-                    <option value="users">משתמשים (Users)</option>
-                    <option value="licenses">רישיונות (Licenses)</option>
+            
+            <div class="flex items-center gap-4 bg-slate-900 p-2 rounded-2xl border border-slate-800">
+                <label class="text-xs font-bold text-slate-400 px-2 uppercase">בחר טבלה:</label>
+                <select id="colSelect" onchange="initTable(this.value)" class="bg-slate-800 text-white px-4 py-2 rounded-xl outline-none border border-slate-700 focus:border-blue-500">
+                    <option value="tickets">קריאות שירות</option>
+                    <option value="clients">לקוחות קבועים</option>
+                    <option value="users">משתמשים/טכנאים</option>
+                    <option value="licenses">רישיונות</option>
                 </select>
+                <button onclick="addNewRow()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl font-bold transition">
+                    + רשומה חדשה
+                </button>
             </div>
         </header>
 
-        <div class="mb-6 flex gap-4">
-            <input type="text" id="dbSearch" oninput="filterTable()" placeholder="חיפוש חופשי בנתונים..." class="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-sm outline-none">
-            <div class="bg-slate-800 px-4 py-2 rounded-lg border border-slate-700 text-xs flex items-center">
-                רשומות: <span id="recordCount" class="mr-2 font-bold text-blue-400">0</span>
-            </div>
+        <div class="mb-6 relative">
+            <i class="fas fa-search absolute right-4 top-3.5 text-slate-500"></i>
+            <input type="text" id="dbSearch" oninput="searchData()" placeholder="חפש בכל שדה בטבלה..." class="w-full bg-slate-900 border border-slate-800 rounded-2xl py-3 pr-12 pl-4 outline-none focus:border-blue-500 transition">
         </div>
 
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+        <div class="bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden shadow-2xl">
             <div class="overflow-x-auto">
-                <table class="w-full text-right text-xs border-collapse">
-                    <thead id="tableHead" class="bg-slate-800 text-slate-400 uppercase tracking-wider">
+                <table class="w-full text-right text-sm">
+                    <thead id="tHead" class="bg-slate-800 text-slate-400 font-black uppercase text-[11px] tracking-widest border-b border-slate-700">
                         </thead>
-                    <tbody id="tableBody" class="divide-y divide-slate-800">
+                    <tbody id="tBody" class="divide-y divide-slate-800">
                         </tbody>
                 </table>
             </div>
@@ -46,67 +53,115 @@
 
     <script type="module">
         import { db, auth, ADMIN_PRIMARY } from './js/app.js';
-        import { collection, onSnapshot, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { collection, onSnapshot, doc, updateDoc, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         let currentData = [];
+        let currentCollection = 'tickets';
 
-        // פונקציה לטעינת אוסף נבחר
-        window.loadCollection = (colName) => {
+        // טעינת הטבלה
+        window.initTable = (colName) => {
+            currentCollection = colName;
             onSnapshot(collection(db, colName), (snap) => {
                 currentData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                renderTable(colName);
-                document.getElementById('recordCount').innerText = currentData.length;
+                renderTable();
             });
         };
 
-        function renderTable(colName) {
-            const thead = document.getElementById('tableHead');
-            const tbody = document.getElementById('tableBody');
+        function renderTable() {
+            const head = document.getElementById('tHead');
+            const body = document.getElementById('tBody');
             
             if (currentData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-slate-500">אין נתונים באוסף זה</td></tr>';
+                body.innerHTML = '<tr><td class="p-10 text-center text-slate-500">הטבלה ריקה</td></tr>';
                 return;
             }
 
-            // חילוץ כותרות מכל המפתחות שקיימים באובייקטים
-            const keys = ['id', ...new Set(currentData.flatMap(obj => Object.keys(obj).filter(k => k !== 'id')))];
-            
-            thead.innerHTML = `<tr>${keys.map(k => `<th class="p-4 border-b border-slate-700">${k}</th>`).join('')}<th class="p-4 border-b border-slate-700">פעולות</th></tr>`;
+            // זיהוי שדות (ללא ID)
+            const fields = Object.keys(currentData.reduce((a, b) => ({...a, ...b}))).filter(f => f !== 'id');
 
-            tbody.innerHTML = currentData.map(row => `
-                <tr class="hover:bg-slate-800/50 transition-colors">
-                    ${keys.map(k => `
-                        <td class="p-4 text-slate-300 max-w-[200px] truncate" title="${row[k] || ''}">
-                            ${k === 'id' ? `<span class="text-blue-500 font-bold">${row[k]}</span>` : (row[k] || '-')}
-                        </td>
-                    `).join('')}
-                    <td class="p-4 flex gap-2">
-                        <button onclick="deleteRecord('${colName}', '${row.id}')" class="text-rose-500 hover:text-rose-400 p-1">
-                            <i class="fas fa-trash"></i>
-                        </button>
+            head.innerHTML = `<tr>
+                ${fields.map(f => `<th class="p-4">${f}</th>`).join('')}
+                <th class="p-4 text-left">פעולות</th>
+            </tr>`;
+
+            body.innerHTML = currentData.map(row => `
+                <tr id="row-${row.id}" class="hover:bg-slate-800/40 transition">
+                    ${fields.map(f => `<td class="p-4 text-slate-400 font-mono" data-key="${f}">${row[f] || ''}</td>`).join('')}
+                    <td class="p-4 flex gap-3 justify-end">
+                        <button onclick="enterEditMode('${row.id}')" class="text-blue-400 hover:text-blue-300 edit-btn"><i class="fas fa-edit"></i></button>
+                        <button onclick="deleteRecord('${row.id}')" class="text-rose-500 hover:text-rose-400"><i class="fas fa-trash"></i></button>
                     </td>
                 </tr>
             `).join('');
         }
 
-        window.deleteRecord = async (col, id) => {
-            if(confirm(`האם למחוק סופית את רשומה ${id}?`)) {
-                await deleteDoc(doc(db, col, id));
+        // מצב עריכה
+        window.enterEditMode = (id) => {
+            const row = document.getElementById(`row-${id}`);
+            const cells = row.querySelectorAll('td[data-key]');
+            
+            cells.forEach(cell => {
+                const val = cell.innerText;
+                cell.innerHTML = `<input type="text" class="edit-input" value="${val}">`;
+            });
+
+            const actionCell = row.querySelector('td:last-child');
+            actionCell.innerHTML = `
+                <button onclick="saveEdit('${id}')" class="text-emerald-400 font-bold ml-3">שמור</button>
+                <button onclick="renderTable()" class="text-slate-500">ביטול</button>
+            `;
+        };
+
+        // שמירת שינויים
+        window.saveEdit = async (id) => {
+            const row = document.getElementById(`row-${id}`);
+            const inputs = row.querySelectorAll('input');
+            const keys = Array.from(row.querySelectorAll('td[data-key]')).map(td => td.dataset.key);
+            
+            const updatedData = {};
+            inputs.forEach((input, index) => {
+                updatedData[keys[index]] = input.value;
+            });
+
+            await updateDoc(doc(db, currentCollection, id), updatedData);
+            alert("הנתונים עודכנו בהצלחה!");
+        };
+
+        // הוספת רשומה חדשה
+        window.addNewRow = async () => {
+            const firstRow = currentData[0] || {};
+            const keys = Object.keys(firstRow).filter(k => k !== 'id');
+            const newData = {};
+            
+            keys.forEach(k => {
+                const val = prompt(`הכנס ערך עבור שדה: ${k}`);
+                if (val !== null) newData[k] = val;
+            });
+
+            if (Object.keys(newData).length > 0) {
+                await addDoc(collection(db, currentCollection), newData);
             }
         };
 
-        window.filterTable = () => {
-            const term = document.getElementById('dbSearch').value.toLowerCase();
-            const filtered = currentData.filter(row => 
-                Object.values(row).some(val => String(val).toLowerCase().includes(term))
-            );
-            // כאן אפשר להוסיף לוגיקה לרינדור מחדש רק של הסינון
+        // מחיקה
+        window.deleteRecord = async (id) => {
+            if (confirm("בטוח שברצונך למחוק לצמיתות?")) {
+                await deleteDoc(doc(db, currentCollection, id));
+            }
         };
 
-        // בדיקת הרשאה ראשונית
+        // חיפוש
+        window.searchData = () => {
+            const term = document.getElementById('dbSearch').value.toLowerCase();
+            const rows = document.querySelectorAll('#tBody tr');
+            rows.forEach(row => {
+                row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
+            });
+        };
+
         auth.onAuthStateChanged(user => {
-            if(user && user.email === ADMIN_PRIMARY) {
-                loadCollection('tickets'); // ברירת מחדל
+            if (user && user.email === ADMIN_PRIMARY) {
+                initTable('tickets');
             } else {
                 window.location.href = 'index.html';
             }
