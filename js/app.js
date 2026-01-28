@@ -65,6 +65,16 @@ export function injectNavbar() {
             return html;
         };
 
+// בתוך ה-onAuthStateChanged של injectNavbar
+const configSnap = await getDoc(doc(db, "config", "ui"));
+if (configSnap.exists()) {
+    const ui = configSnap.data();
+    // שינוי שם האתר דינמית
+    document.querySelector('.font-black.text-xl.text-blue-400').innerText = ui.siteName;
+    // שינוי צבע נושא (Primary Color)
+    document.documentElement.style.setProperty('--main-theme', ui.themeColor);
+};
+
         const navHtml = `
         <nav id="main-nav" class="bg-slate-900 text-white shadow-xl sticky top-0 z-[100]" dir="rtl">
             <div class="max-w-7xl mx-auto px-4 md:px-8">

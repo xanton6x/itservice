@@ -3,12 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>מנהל מסד נתונים מלא - IT MGMT</title>
+    <title>Master Control - IT MGMT</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .edit-input { background: #1e293b; border: 1px solid #334155; color: white; padding: 4px 8px; border-radius: 4px; width: 100%; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; transition: background 0.3s; }
+        .edit-input { background: #1e293b; border: 1px solid #334155; color: white; padding: 6px 12px; border-radius: 8px; width: 100%; outline: none; }
+        .edit-input:focus { border-color: #3b82f6; }
+        /* הגדרת משתנה צבע דינמי */
+        :root { --main-color: #3b82f6; }
+        .text-theme { color: var(--main-color); }
+        .bg-theme { background-color: var(--main-color); }
     </style>
 </head>
 <body class="bg-[#0f172a] text-slate-200 min-h-screen">
@@ -16,49 +21,88 @@
     <div class="max-w-[95%] mx-auto py-8">
         <header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4 border-b border-slate-800 pb-6">
             <div>
-                <h1 class="text-3xl font-black text-blue-500 italic uppercase">System Master Control</h1>
-                <p class="text-slate-500 font-bold">ניהול, עריכה ושינוי נתונים בזמן אמת</p>
+                <h1 id="display-site-name" class="text-3xl font-black text-theme italic uppercase">System Master Control</h1>
+                <p class="text-slate-500 font-bold">ניהול נתונים ועיצוב המערכת בזמן אמת</p>
             </div>
             
             <div class="flex items-center gap-4 bg-slate-900 p-2 rounded-2xl border border-slate-800">
-                <label class="text-xs font-bold text-slate-400 px-2 uppercase">בחר טבלה:</label>
-                <select id="colSelect" onchange="initTable(this.value)" class="bg-slate-800 text-white px-4 py-2 rounded-xl outline-none border border-slate-700 focus:border-blue-500">
+                <label class="text-xs font-bold text-slate-400 px-2 uppercase">בחר תחום:</label>
+                <select id="colSelect" onchange="switchMode(this.value)" class="bg-slate-800 text-white px-4 py-2 rounded-xl outline-none border border-slate-700 focus:border-blue-500">
                     <option value="tickets">קריאות שירות</option>
                     <option value="clients">לקוחות קבועים</option>
                     <option value="users">משתמשים/טכנאים</option>
                     <option value="licenses">רישיונות</option>
+                    <option value="ui_settings">🎨 הגדרות עיצוב ואתר</option>
                 </select>
-                <button onclick="addNewRow()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl font-bold transition">
+                <button id="addBtn" onclick="addNewRow()" class="bg-theme hover:opacity-80 text-white px-4 py-2 rounded-xl font-bold transition">
                     + רשומה חדשה
                 </button>
             </div>
         </header>
 
-        <div class="mb-6 relative">
-            <i class="fas fa-search absolute right-4 top-3.5 text-slate-500"></i>
-            <input type="text" id="dbSearch" oninput="searchData()" placeholder="חפש בכל שדה בטבלה..." class="w-full bg-slate-900 border border-slate-800 rounded-2xl py-3 pr-12 pl-4 outline-none focus:border-blue-500 transition">
+        <div id="designPanel" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 bg-slate-900 p-8 rounded-3xl border border-blue-500/30 shadow-2xl">
+            <div class="space-y-2">
+                <label class="text-xs font-bold text-slate-400 uppercase">שם המערכת (Logo)</label>
+                <input type="text" id="ui-siteName" class="edit-input" oninput="updatePreview()">
+            </div>
+            <div class="space-y-2">
+                <label class="text-xs font-bold text-slate-400 uppercase">צבע נושא עיקרי</label>
+                <input type="color" id="ui-themeColor" class="w-full h-11 bg-slate-800 border border-slate-700 rounded-lg cursor-pointer" oninput="updatePreview()">
+            </div>
+            <div class="space-y-2">
+                <label class="text-xs font-bold text-slate-400 uppercase">הודעת מערכת (Marquee)</label>
+                <input type="text" id="ui-announcement" class="edit-input" placeholder="הודעה שתופיע בראש האתר...">
+            </div>
+            <div class="md:col-span-3 pt-4">
+                <button onclick="saveUIConfig()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-3 rounded-xl font-black transition w-full md:w-auto">
+                    שמור שינויי עיצוב והחל על כל האתר
+                </button>
+            </div>
         </div>
 
-        <div class="bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden shadow-2xl">
-            <div class="overflow-x-auto">
-                <table class="w-full text-right text-sm">
-                    <thead id="tHead" class="bg-slate-800 text-slate-400 font-black uppercase text-[11px] tracking-widest border-b border-slate-700">
-                        </thead>
-                    <tbody id="tBody" class="divide-y divide-slate-800">
-                        </tbody>
-                </table>
+        <div id="tableContainer">
+            <div class="mb-6 relative">
+                <i class="fas fa-search absolute right-4 top-3.5 text-slate-500"></i>
+                <input type="text" id="dbSearch" oninput="searchData()" placeholder="חפש בכל שדה בטבלה..." class="w-full bg-slate-900 border border-slate-800 rounded-2xl py-3 pr-12 pl-4 outline-none focus:border-blue-500 transition">
+            </div>
+
+            <div class="bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden shadow-2xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right text-sm">
+                        <thead id="tHead" class="bg-slate-800 text-slate-400 font-black uppercase text-[11px] tracking-widest border-b border-slate-700"></thead>
+                        <tbody id="tBody" class="divide-y divide-slate-800"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 
     <script type="module">
         import { db, auth, ADMIN_PRIMARY } from './js/app.js';
-        import { collection, onSnapshot, doc, updateDoc, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { collection, onSnapshot, doc, updateDoc, deleteDoc, addDoc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         let currentData = [];
         let currentCollection = 'tickets';
 
-        // טעינת הטבלה
+        // החלפת מצבים: טבלה או עיצוב
+        window.switchMode = (val) => {
+            const tableCont = document.getElementById('tableContainer');
+            const designPanel = document.getElementById('designPanel');
+            const addBtn = document.getElementById('addBtn');
+
+            if (val === 'ui_settings') {
+                tableCont.classList.add('hidden');
+                addBtn.classList.add('hidden');
+                designPanel.classList.remove('hidden');
+                loadCurrentUI();
+            } else {
+                tableCont.classList.remove('hidden');
+                addBtn.classList.remove('hidden');
+                designPanel.classList.add('hidden');
+                initTable(val);
+            }
+        };
+
         window.initTable = (colName) => {
             currentCollection = colName;
             onSnapshot(collection(db, colName), (snap) => {
@@ -70,93 +114,95 @@
         function renderTable() {
             const head = document.getElementById('tHead');
             const body = document.getElementById('tBody');
-            
             if (currentData.length === 0) {
-                body.innerHTML = '<tr><td class="p-10 text-center text-slate-500">הטבלה ריקה</td></tr>';
+                body.innerHTML = '<tr><td class="p-10 text-center text-slate-500">אין נתונים</td></tr>';
                 return;
             }
-
-            // זיהוי שדות (ללא ID)
             const fields = Object.keys(currentData.reduce((a, b) => ({...a, ...b}))).filter(f => f !== 'id');
-
-            head.innerHTML = `<tr>
-                ${fields.map(f => `<th class="p-4">${f}</th>`).join('')}
-                <th class="p-4 text-left">פעולות</th>
-            </tr>`;
-
+            head.innerHTML = `<tr>${fields.map(f => `<th class="p-4">${f}</th>`).join('')}<th class="p-4 text-left">פעולות</th></tr>`;
             body.innerHTML = currentData.map(row => `
                 <tr id="row-${row.id}" class="hover:bg-slate-800/40 transition">
                     ${fields.map(f => `<td class="p-4 text-slate-400 font-mono" data-key="${f}">${row[f] || ''}</td>`).join('')}
                     <td class="p-4 flex gap-3 justify-end">
-                        <button onclick="enterEditMode('${row.id}')" class="text-blue-400 hover:text-blue-300 edit-btn"><i class="fas fa-edit"></i></button>
+                        <button onclick="enterEditMode('${row.id}')" class="text-blue-400 hover:text-blue-300"><i class="fas fa-edit"></i></button>
                         <button onclick="deleteRecord('${row.id}')" class="text-rose-500 hover:text-rose-400"><i class="fas fa-trash"></i></button>
                     </td>
                 </tr>
             `).join('');
         }
 
-        // מצב עריכה
+        // ניהול עיצוב
+        async function loadCurrentUI() {
+            const res = await getDoc(doc(db, "config", "ui"));
+            if (res.exists()) {
+                const data = res.data();
+                document.getElementById('ui-siteName').value = data.siteName || 'IT MGMT';
+                document.getElementById('ui-themeColor').value = data.themeColor || '#3b82f6';
+                document.getElementById('ui-announcement').value = data.announcement || '';
+                updatePreview();
+            }
+        }
+
+        window.updatePreview = () => {
+            const color = document.getElementById('ui-themeColor').value;
+            const name = document.getElementById('ui-siteName').value;
+            document.documentElement.style.setProperty('--main-color', color);
+            document.getElementById('display-site-name').innerText = name;
+        };
+
+        window.saveUIConfig = async () => {
+            const newConfig = {
+                siteName: document.getElementById('ui-siteName').value,
+                themeColor: document.getElementById('ui-themeColor').value,
+                announcement: document.getElementById('ui-announcement').value,
+                updatedAt: new Date().toISOString()
+            };
+            await setDoc(doc(db, "config", "ui"), newConfig);
+            alert("הגדרות המערכת עודכנו בהצלחה!");
+            location.reload();
+        };
+
+        // --- פונקציות עריכה (הקוד הקיים שלך משולב כאן) ---
         window.enterEditMode = (id) => {
             const row = document.getElementById(`row-${id}`);
             const cells = row.querySelectorAll('td[data-key]');
-            
             cells.forEach(cell => {
                 const val = cell.innerText;
                 cell.innerHTML = `<input type="text" class="edit-input" value="${val}">`;
             });
-
             const actionCell = row.querySelector('td:last-child');
-            actionCell.innerHTML = `
-                <button onclick="saveEdit('${id}')" class="text-emerald-400 font-bold ml-3">שמור</button>
-                <button onclick="renderTable()" class="text-slate-500">ביטול</button>
-            `;
+            actionCell.innerHTML = `<button onclick="saveEdit('${id}')" class="text-emerald-400 font-bold ml-3">שמור</button> <button onclick="renderTable()" class="text-slate-500">ביטול</button>`;
         };
 
-        // שמירת שינויים
         window.saveEdit = async (id) => {
             const row = document.getElementById(`row-${id}`);
             const inputs = row.querySelectorAll('input');
             const keys = Array.from(row.querySelectorAll('td[data-key]')).map(td => td.dataset.key);
-            
             const updatedData = {};
-            inputs.forEach((input, index) => {
-                updatedData[keys[index]] = input.value;
-            });
-
+            inputs.forEach((input, index) => { updatedData[keys[index]] = input.value; });
             await updateDoc(doc(db, currentCollection, id), updatedData);
-            alert("הנתונים עודכנו בהצלחה!");
+            alert("עודכן!");
         };
 
-        // הוספת רשומה חדשה
+        window.deleteRecord = async (id) => {
+            if (confirm("למחוק סופית?")) await deleteDoc(doc(db, currentCollection, id));
+        };
+
         window.addNewRow = async () => {
             const firstRow = currentData[0] || {};
             const keys = Object.keys(firstRow).filter(k => k !== 'id');
             const newData = {};
-            
             keys.forEach(k => {
                 const val = prompt(`הכנס ערך עבור שדה: ${k}`);
                 if (val !== null) newData[k] = val;
             });
-
-            if (Object.keys(newData).length > 0) {
-                await addDoc(collection(db, currentCollection), newData);
-            }
+            if (Object.keys(newData).length > 0) await addDoc(collection(db, currentCollection), newData);
         };
 
-        // מחיקה
-        window.deleteRecord = async (id) => {
-            if (confirm("בטוח שברצונך למחוק לצמיתות?")) {
-                await deleteDoc(doc(db, currentCollection, id));
-            }
-        };
-
-        // חיפוש
         window.searchData = () => {
             const term = document.getElementById('dbSearch').value.toLowerCase();
             const rows = document.querySelectorAll('#tBody tr');
-            rows.forEach(row => {
-                row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
-            });
+            rows.forEach(row => { row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none'; });
         };
 
         auth.onAuthStateChanged(user => {
