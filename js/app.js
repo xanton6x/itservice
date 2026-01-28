@@ -35,14 +35,15 @@ export function injectNavbar() {
         try {
             const userDoc = await getDoc(doc(db, "users", user.email));
             if (userDoc.exists()) {
-                role = userDoc.data().role;
+                const userData = userDoc.data();
+                role = userData.role;
                 if (role === 'admin') isAdmin = true;
             }
         } catch (e) {
-            console.warn("שגיאה במשיכת הרשאות.");
+            console.warn("שגיאה במשיכת הרשאות, משתמש בהרשאות ברירת מחדל.");
         }
 
-        // בניית הלינקים
+        // בניית הלינקים - הוספת logic ודאי עבור אנטון
         const generateLinks = (isMobile = false) => {
             const linkClass = isMobile 
                 ? "block py-3 px-4 text-slate-200 hover:bg-slate-700 hover:text-white rounded-lg transition-all" 
@@ -51,13 +52,14 @@ export function injectNavbar() {
             let html = `<a href="index.html" class="${linkClass}">בית</a>`;
             html += `<a href="incidents.html" class="${linkClass}">קריאות</a>`;
             
-            if (isAdmin) {
-                // הוספת ניהול ה-Database עבור אנטון/אדמין
-                html += `<a href="database.html" class="${isMobile ? linkClass : 'text-indigo-400 font-bold ml-6'}"><i class="fas fa-database ml-1"></i>ניהול DB</a>`;
+            // תנאי גישה למנהל: אימייל של אנטון או תפקיד אדמין ב-DB
+            if (isAdmin || user.email === ADMIN_PRIMARY) {
+                html += `<a href="database.html" class="${isMobile ? linkClass : 'text-indigo-400 font-bold ml-6'}"><i class="fas fa-database ml-1 text-[10px]"></i> ניהול DB</a>`;
                 html += `<a href="admin_users.html" class="${isMobile ? linkClass : 'text-orange-400 font-bold ml-6'}">משתמשים</a>`;
                 html += `<a href="eset_licenses.html" class="${linkClass}">רישיונות</a>`;
             }
-            if (isAdmin || role === 'tech') {
+            
+            if (isAdmin || role === 'tech' || user.email === ADMIN_PRIMARY) {
                 html += `<a href="report.html" class="${linkClass}">דוחות</a>`;
             }
             return html;
@@ -68,7 +70,7 @@ export function injectNavbar() {
             <div class="max-w-7xl mx-auto px-4 md:px-8">
                 <div class="flex justify-between items-center h-16">
                     <div class="flex items-center">
-                        <div class="font-black text-xl text-blue-400 ml-8 border-l border-slate-700 pl-4 tracking-tighter">
+                        <div class="font-black text-xl text-blue-400 ml-8 border-l border-slate-700 pl-4 tracking-tighter uppercase">
                             IT MGMT
                         </div>
                         <div class="hidden md:flex items-center">
@@ -77,7 +79,7 @@ export function injectNavbar() {
                     </div>
 
                     <div class="flex items-center gap-4">
-                        <button onclick="document.body.classList.toggle('dark')" class="p-2 text-slate-400 hover:text-yellow-400 transition-colors">
+                        <button onclick="document.body.classList.toggle('dark')" class="p-2 text-slate-400 hover:text-yellow-400 transition-colors" title="מצב לילה/יום">
                             <i class="fas fa-moon"></i>
                         </button>
 
@@ -110,16 +112,23 @@ export function injectNavbar() {
         <style>
             #mobile-menu:not(.hidden) { animation: slideDown 0.3s ease-out; }
             @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-            /* עיצוב בסיסי ל-Dark Mode */
-            body.dark { background-color: #0f172a !important; color: #f1f5f9; }
-            body.dark .bg-white { background-color: #1e293b !important; color: white; }
-            body.dark .text-slate-800 { color: #f1f5f9 !important; }
-            body.dark .border { border-color: #334155 !important; }
+            
+            /* הגדרות Dark Mode גלובליות */
+            body.dark { background-color: #0f172a !important; color: #f1f5f9 !important; }
+            body.dark .bg-white { background-color: #1e293b !important; color: #f1f5f9 !important; }
+            body.dark .text-slate-800, body.dark .text-slate-700 { color: #f1f5f9 !important; }
+            body.dark .border, body.dark .border-slate-200 { border-color: #334155 !important; }
+            body.dark input, body.dark select, body.dark textarea { 
+                background-color: #0f172a !important; 
+                color: white !important; 
+                border-color: #475569 !important; 
+            }
         </style>
         `;
 
         document.body.insertAdjacentHTML('afterbegin', navHtml);
 
+        // לוגיקה לתפריט מובייל
         const mobileBtn = document.getElementById('mobile-btn');
         const mobileMenu = document.getElementById('mobile-menu');
         const menuIcon = document.getElementById('menu-icon');
