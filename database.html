@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Control Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-slate-50 min-h-screen">
+
+    <div class="max-w-6xl mx-auto p-4 md:p-8">
+        <header class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-black text-slate-800">Admin Control Panel</h1>
+                <p class="text-slate-500 font-medium">ניהול תשתית המערכת ונתונים</p>
+            </div>
+            <a href="index.html" class="bg-white text-slate-600 px-4 py-2 rounded-xl shadow-sm border font-bold hover:bg-slate-100 transition">
+                <i class="fas fa-arrow-right ml-2"></i>חזרה למערכת
+            </a>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-indigo-600 p-6 rounded-3xl text-white shadow-xl shadow-indigo-100">
+                <p class="text-indigo-100 text-sm font-bold uppercase mb-2">קריאות החודש</p>
+                <h2 id="stats-current-month" class="text-4xl font-black">0</h2>
+                <p id="stats-compare" class="text-xs mt-2 opacity-80">טוען נתונים...</p>
+            </div>
+            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                <p class="text-slate-400 text-sm font-bold uppercase mb-2">סה"כ לקוחות</p>
+                <h2 id="stats-total-clients" class="text-4xl font-black text-slate-800">0</h2>
+            </div>
+            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                <p class="text-slate-400 text-sm font-bold uppercase mb-2">בריאות ה-DB</p>
+                <h2 id="stats-db-size" class="text-4xl font-black text-emerald-500 italic uppercase">Fast</h2>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-black text-slate-700 uppercase tracking-wider text-sm">צוות טכנאים</h3>
+                        <button onclick="toggleModal('techModal')" class="bg-slate-100 text-slate-800 p-2 rounded-lg hover:bg-indigo-600 hover:text-white transition"><i class="fas fa-plus"></i></button>
+                    </div>
+                    <div id="techsList" class="space-y-3"></div>
+                </div>
+
+                <div class="bg-rose-50 p-6 rounded-3xl border border-rose-100">
+                    <h3 class="font-black text-rose-700 text-sm uppercase mb-4">תחזוקה וניקוי</h3>
+                    <button onclick="cleanupDatabase()" class="w-full bg-white text-rose-600 border border-rose-200 py-3 rounded-xl font-bold hover:bg-rose-600 hover:text-white transition">
+                        <i class="fas fa-broom ml-2"></i>ניקוי קריאות מעל 90 יום
+                    </button>
+                    <p class="text-[10px] text-rose-400 mt-2 text-center">פעולה זו תמחק קריאות סגורות בלבד באופן סופי</p>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2">
+                <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm h-full">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="font-black text-slate-700 uppercase tracking-wider text-sm">ניהול לקוחות קבועים</h3>
+                        <button onclick="toggleModal('clientModal')" class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg shadow-indigo-100 hover:scale-105 transition">הוסף לקוח</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-right border-collapse">
+                            <thead>
+                                <tr class="text-slate-400 text-xs border-b">
+                                    <th class="py-3 px-2">שם הלקוח</th>
+                                    <th class="py-3 px-2">טלפון</th>
+                                    <th class="py-3 px-2">פעולות</th>
+                                </tr>
+                            </thead>
+                            <tbody id="clientsTableBody" class="text-sm"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="techModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl">
+            <h2 class="text-xl font-black mb-4 italic">הוספת טכנאי</h2>
+            <input type="text" id="tName" placeholder="שם הטכנאי" class="w-full p-3 bg-slate-50 border rounded-xl mb-3 outline-none focus:ring-2 focus:ring-indigo-500">
+            <input type="email" id="tEmail" placeholder="אימייל" class="w-full p-3 bg-slate-50 border rounded-xl mb-4 outline-none">
+            <button onclick="addTech()" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-indigo-100">שמור טכנאי</button>
+            <button onclick="toggleModal('techModal')" class="w-full text-slate-400 text-xs mt-4">סגור</button>
+        </div>
+    </div>
+
+    <div id="clientModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl">
+            <h2 class="text-xl font-black mb-4 italic">הוספת לקוח קבוע</h2>
+            <input type="text" id="cName" placeholder="שם החברה/לקוח" class="w-full p-3 bg-slate-50 border rounded-xl mb-3 outline-none">
+            <input type="tel" id="cPhone" placeholder="טלפון ליצירת קשר" class="w-full p-3 bg-slate-50 border rounded-xl mb-4 outline-none">
+            <button onclick="addClient()" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-emerald-100">הוסף למאגר</button>
+            <button onclick="toggleModal('clientModal')" class="w-full text-slate-400 text-xs mt-4">סגור</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db, auth, injectNavbar, ADMIN_PRIMARY } from './js/app.js';
+        import { collection, query, onSnapshot, doc, addDoc, deleteDoc, getDocs, where, Timestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // עזרים
+        window.toggleModal = (id) => document.getElementById(id).classList.toggle('hidden');
+
+        // טעינת טכנאים
+        onSnapshot(query(collection(db, "users"), where("role", "==", "tech")), (snap) => {
+            const list = document.getElementById('techsList');
+            list.innerHTML = '';
+            snap.forEach(d => {
+                const u = d.data();
+                list.innerHTML += `
+                    <div class="flex justify-between items-center p-3 bg-slate-50 rounded-2xl border border-slate-100 hover:border-indigo-200 transition">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-bold text-xs">${u.name[0]}</div>
+                            <div><p class="text-xs font-bold text-slate-700">${u.name}</p><p class="text-[9px] text-slate-400">${u.email}</p></div>
+                        </div>
+                        <button onclick="deleteDoc(doc(db, 'users', '${d.id}'))" class="text-slate-300 hover:text-rose-500"><i class="fas fa-times-circle"></i></button>
+                    </div>`;
+            });
+        });
+
+        // טעינת לקוחות
+        onSnapshot(collection(db, "clients"), (snap) => {
+            const tbody = document.getElementById('clientsTableBody');
+            document.getElementById('stats-total-clients').innerText = snap.size;
+            tbody.innerHTML = '';
+            snap.forEach(d => {
+                const c = d.data();
+                tbody.innerHTML += `
+                    <tr class="border-b border-slate-50 hover:bg-slate-50 transition">
+                        <td class="py-4 font-bold text-slate-700">${c.name}</td>
+                        <td class="py-4 text-slate-500">${c.phone}</td>
+                        <td class="py-4">
+                            <button onclick="deleteDoc(doc(db, 'clients', '${d.id}'))" class="text-rose-400 hover:text-rose-600"><i class="fas fa-trash-alt"></i></button>
+                        </td>
+                    </tr>`;
+            });
+        });
+
+        // חישוב סטטיסטיקה
+        async function calculateStats() {
+            const now = new Date();
+            const firstDayCurrent = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+            const firstDayLast = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
+            
+            const q = await getDocs(collection(db, "tickets"));
+            let currentCount = 0;
+            let lastCount = 0;
+
+            q.forEach(d => {
+                const created = d.data().createdAt;
+                if(created >= firstDayCurrent) currentCount++;
+                else if(created >= firstDayLast && created < firstDayCurrent) lastCount++;
+            });
+
+            document.getElementById('stats-current-month').innerText = currentCount;
+            const diff = currentCount - lastCount;
+            document.getElementById('stats-compare').innerText = diff >= 0 ? `עלייה של ${diff} קריאות מחודש שעבר` : `ירידה של ${Math.abs(diff)} קריאות מחודש שעבר`;
+        }
+
+        // הוספת טכנאי
+        window.addTech = async () => {
+            const name = document.getElementById('tName').value;
+            const email = document.getElementById('tEmail').value;
+            if(!name || !email) return;
+            await addDoc(collection(db, "users"), { name, email, role: "tech" });
+            toggleModal('techModal');
+        };
+
+        // הוספת לקוח
+        window.addClient = async () => {
+            const name = document.getElementById('cName').value;
+            const phone = document.getElementById('cPhone').value;
+            if(!name || !phone) return;
+            await addDoc(collection(db, "clients"), { name, phone });
+            toggleModal('clientModal');
+        };
+
+        // ניקוי דאטה
+        window.cleanupDatabase = async () => {
+            if(!confirm("האם אתה בטוח שברצונך למחוק לצמיתות את כל הקריאות הסגורות מלפני 90 יום?")) return;
+            const limitDate = new Date();
+            limitDate.setDate(limitDate.getDate() - 90);
+            const q = query(collection(db, "tickets"), where("status", "==", "הושלם"));
+            const docs = await getDocs(q);
+            let deleted = 0;
+            docs.forEach(async (d) => {
+                if(d.data().createdAt < limitDate.toISOString()) {
+                    await deleteDoc(doc(db, "tickets", d.id));
+                    deleted++;
+                }
+            });
+            alert(`הניקוי הסתיים! ${deleted} קריאות הוסרו.`);
+        };
+
+        auth.onAuthStateChanged(user => {
+            if(user && user.email === 'anton@rcc.co.il') { calculateStats(); }
+            else { window.location.href = 'index.html'; }
+        });
+    </script>
+</body>
+</html>
